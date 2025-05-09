@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar'; // We'll create this soon
-// import axios from 'axios'; // For API calls
+import Navbar from '../components/Navbar';
+import StatsService from '../services/statsService';
+import AuthService from '../services/authService'; // To get current user for name display
 
 const DashboardPage = () => {
   const [docCountThisMonth, setDocCountThisMonth] = useState(0);
@@ -9,37 +10,32 @@ const DashboardPage = () => {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    // Fetch user info
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = AuthService.getCurrentUser();
     if (user && user.nama) {
       setUserName(user.nama);
     }
 
-    // TODO: Fetch actual dashboard data from backend
-    // Example:
-    // const fetchDashboardData = async () => {
-    //   try {
-    //     const token = localStorage.getItem('token');
-    //     const config = { headers: { Authorization: \`Bearer ${token}\` } };
-    //     const countRes = await axios.get('/api/stats/docs/count-current-month', config);
-    //     setDocCountThisMonth(countRes.data.count);
-    //     const monthlyRes = await axios.get('/api/stats/docs/monthly-uploads', config);
-    //     setMonthlyStats(monthlyRes.data.stats); // Assuming format [{ month: 'YYYY-MM', count: X }]
-    //   } catch (error) {
-    //     console.error("Failed to fetch dashboard data", error);
-    //   }
-    // };
-    // fetchDashboardData();
+    const fetchDashboardData = async () => {
+      try {
+        const countData = await StatsService.getCountDocumentsThisMonth();
+        setDocCountThisMonth(countData.count);
+        
+        const monthlyData = await StatsService.getMonthlyUploadStats();
+        // Ensure count is a number for the chart
+        const formattedMonthlyStats = monthlyData.stats.map(s => ({
+            ...s,
+            count: parseInt(s.count, 10) 
+        }));
+        setMonthlyStats(formattedMonthlyStats);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error);
+        alert(error.message || "Gagal memuat data dashboard.");
+      }
+    };
 
-    // Placeholder data
-    setDocCountThisMonth(25); // Placeholder
-    setMonthlyStats([ // Placeholder for chart
-      { month: '2025-01', count: 10 },
-      { month: '2025-02', count: 15 },
-      { month: '2025-03', count: 20 },
-      { month: '2025-04', count: 12 },
-      { month: '2025-05', count: 25 },
-    ]);
+    if (AuthService.isAuthenticated()) { // Only fetch if authenticated
+        fetchDashboardData();
+    }
   }, []);
 
   return (

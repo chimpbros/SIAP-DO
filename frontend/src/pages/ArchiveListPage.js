@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-// import axios from 'axios';
+import DocumentService from '../services/documentService';
+import AuthService from '../services/authService'; // To get current user for admin check
 
 const ArchiveListPage = () => {
   const [documents, setDocuments] = useState([]);
@@ -10,83 +11,82 @@ const ArchiveListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  // const [user, setUser] = useState(null); // To check if admin for Excel download
+  const [user, setUser] = useState(null);
 
-  // useEffect(() => {
-  //   const currentUser = JSON.parse(localStorage.getItem('user'));
-  //   setUser(currentUser);
-  // }, []);
+  useEffect(() => {
+    const currentUser = AuthService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
 
   const fetchDocuments = async (page = 1) => {
     setLoading(true);
     console.log(`Fetching documents for page: ${page}, search: ${searchTerm}, month: ${filterMonth}, year: ${filterYear}`);
-    // TODO: Implement actual API call to /api/documents
-    // try {
-    //   const token = localStorage.getItem('token');
-    //   const params = { page, limit: 10, searchTerm, month: filterMonth, year: filterYear };
-    //   const config = { headers: { Authorization: \`Bearer ${token}\` }, params };
-    //   const response = await axios.get('/api/documents', config);
-    //   setDocuments(response.data.documents);
-    //   setCurrentPage(response.data.currentPage);
-    //   setTotalPages(response.data.totalPages);
-    // } catch (error) {
-    //   console.error("Failed to fetch documents", error);
-    //   setDocuments([]); // Clear documents on error
-    // } finally {
-    //   setLoading(false);
-    // }
-
-    // Placeholder data
-    setTimeout(() => {
-      const mockDocs = [
-        { document_id: '1', nomor_surat: 'NS/001/V/2025', tipe_surat: 'Surat Masuk', jenis_surat: 'Biasa', perihal: 'Undangan Rapat Koordinasi', pengirim: 'Instansi X', upload_timestamp: '2025-05-01 10:00:00', uploader_nama: 'User A', original_filename: 'undangan.pdf' },
-        { document_id: '2', nomor_surat: 'NS/002/V/2025', tipe_surat: 'Surat Keluar', jenis_surat: 'ST', perihal: 'Pengiriman Laporan Bulanan', pengirim: null, upload_timestamp: '2025-05-02 11:00:00', uploader_nama: 'User B', original_filename: 'laporan_mei.pdf' },
-        { document_id: '3', nomor_surat: 'STR/001/IV/2025', tipe_surat: 'Surat Masuk', jenis_surat: 'STR', perihal: 'Informasi Rahasia', pengirim: 'Sumber Y', upload_timestamp: '2025-04-15 09:00:00', uploader_nama: 'Admin', original_filename: 'info_rahasia.pdf' },
-      ];
-      const user = JSON.parse(localStorage.getItem('user'));
-      const filteredDocs = mockDocs.filter(doc => {
-        let matches = true;
-        if (!user?.is_admin && doc.jenis_surat === 'STR') matches = false;
-        if (searchTerm && !(doc.nomor_surat.includes(searchTerm) || doc.perihal.includes(searchTerm) || (doc.pengirim && doc.pengirim.includes(searchTerm)))) matches = false;
-        if (filterYear && !doc.upload_timestamp.startsWith(filterYear)) matches = false;
-        if (filterMonth && filterYear && !doc.upload_timestamp.startsWith(`${filterYear}-${filterMonth.padStart(2,'0')}`)) matches = false;
-        return matches;
-      });
-      setDocuments(filteredDocs);
-      setTotalPages(1); // Simplified for placeholder
-      setCurrentPage(1);
+    try {
+      const params = { 
+        page, 
+        limit: 10, 
+        searchTerm: searchTerm || undefined, // Send undefined if empty to avoid empty query param
+        month: filterMonth || undefined, 
+        year: filterYear || undefined 
+      };
+      const data = await DocumentService.listDocuments(params);
+      setDocuments(data.documents);
+      setCurrentPage(data.currentPage);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch documents", error);
+      alert(error.message || "Gagal memuat dokumen.");
+      setDocuments([]); 
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
   
+  // Fetch documents when component mounts or filters/page change
   useEffect(() => {
-    fetchDocuments(1); // Fetch on initial load and when filters change
-  }, [searchTerm, filterMonth, filterYear]);
-
+    if (user) { // Ensure user context is loaded before fetching, as it might affect STR visibility
+        fetchDocuments(currentPage);
+    }
+  }, [user, currentPage]); // Removed searchTerm, filterMonth, filterYear to avoid multiple calls, handle via handleSearch
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchDocuments(1); // Reset to page 1 on new search
+    setCurrentPage(1); // Reset to page 1 on new search/filter
+    fetchDocuments(1); 
   };
 
   const handlePreview = (doc) => {
-    // TODO: Implement actual preview logic, e.g., open /api/documents/:id/preview
-    alert(`Previewing ${doc.original_filename}. Path: ${doc.storage_path || 'N/A'}`);
-    // window.open(`/api/documents/${doc.document_id}/preview?token=${localStorage.getItem('token')}`, '_blank');
+    const previewUrl = DocumentService.previewDocumentUrl(doc.document_id);
+    window.open(previewUrl, '_blank');
   };
 
   const handleDownload = (doc) => {
-    // TODO: Implement actual download logic, e.g., trigger download from /api/documents/:id/download
-    alert(`Downloading ${doc.original_filename}. Path: ${doc.storage_path || 'N/A'}`);
-    // window.location.href = `/api/documents/${doc.document_id}/download?token=${localStorage.getItem('token')}`;
+    const downloadUrl = DocumentService.downloadDocumentUrl(doc.document_id);
+    // Forcing download by creating a temporary link, as direct window.location.href might open in browser for some types
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', doc.original_filename || 'download'); // Or use a default filename
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
   
   const handleExcelDownload = () => {
-    // TODO: Implement actual Excel download
-    alert('Excel download functionality to be implemented.');
-    // const params = { searchTerm, month: filterMonth, year: filterYear };
-    // const token = localStorage.getItem('token');
-    // window.open(`/api/documents/export/excel?${new URLSearchParams(params).toString()}&token=${token}`, '_blank');
+    const params = { 
+        searchTerm: searchTerm || undefined, 
+        month: filterMonth || undefined, 
+        year: filterYear || undefined 
+    };
+    // This will open the URL, and the browser will handle the download based on Content-Disposition
+    // The token is handled by the axios interceptor if this URL were fetched by axios.
+    // For direct window.open, if the backend /export/excel route is protected,
+    // it needs to handle auth via session/cookie or this approach won't pass the token.
+    // A more robust way for token-based auth is to fetch as blob and create object URL.
+    // For now, we assume the backend route might allow GET with query params if session is used,
+    // or we use the commented out downloadExcelExport from DocumentService.
+    const excelUrl = DocumentService.exportDocumentsToExcelUrl(params);
+    window.open(excelUrl, '_blank'); 
+    // alert('Excel download functionality to be implemented via DocumentService.downloadExcelExport if direct URL fails due to auth.');
   };
 
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);

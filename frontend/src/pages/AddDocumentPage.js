@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-// import axios from 'axios';
+import DocumentService from '../services/documentService';
 
 const AddDocumentPage = () => {
   const [formData, setFormData] = useState({
@@ -55,25 +55,23 @@ const AddDocumentPage = () => {
     }
     
     console.log('Add document attempt with:', Object.fromEntries(data.entries()));
-    // TODO: Implement actual API call to /api/documents
-    // try {
-    //   const token = localStorage.getItem('token');
-    //   const config = { headers: { 'Authorization': \`Bearer ${token}\`, 'Content-Type': 'multipart/form-data' } };
-    //   const response = await axios.post('/api/documents', data, config);
-    //   setSuccess(response.data.message || 'Dokumen berhasil ditambahkan!');
-    //   setFormData({ tipe_surat: 'Surat Masuk', jenis_surat: 'Biasa', nomor_surat: '', perihal: '', pengirim: '', isi_disposisi: '' });
-    //   setFile(null);
-    //   document.getElementById('lampiran_surat').value = null; // Clear file input
-    //   setTimeout(() => setSuccess(''), 5000);
-    // } catch (err) {
-    //   setError(err.response?.data?.message || 'Gagal menambahkan dokumen. Silakan coba lagi.');
-    // }
-    alert('Add document functionality to be implemented. Check console for data.');
-    setSuccess('Dokumen berhasil ditambahkan (simulasi)!');
-    setTimeout(() => {
+    try {
+      const response = await DocumentService.addDocument(data);
+      setSuccess(response.message || 'Dokumen berhasil ditambahkan!');
+      // Reset form
+      setFormData({ tipe_surat: 'Surat Masuk', jenis_surat: 'Biasa', nomor_surat: '', perihal: '', pengirim: '', isi_disposisi: '' });
+      setFile(null);
+      if (document.getElementById('lampiran_surat')) { // Check if element exists before trying to clear
+        document.getElementById('lampiran_surat').value = null; 
+      }
+      setTimeout(() => {
         setSuccess('');
-        navigate('/archive');
-    }, 2000);
+        // Optionally navigate or stay on page
+        // navigate('/archive'); 
+      }, 3000);
+    } catch (err) {
+      setError(err.message || 'Gagal menambahkan dokumen. Silakan coba lagi.');
+    }
   };
 
   return (
