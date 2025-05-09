@@ -54,31 +54,34 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-center text-gray-700 mb-6">
-          Sistem Informasi Administrasi dan Pengarsipan (SIAP)
+    <div className="min-h-screen flex flex-col items-center justify-center p-4"> {/* Removed bg-gray-100 */}
+      <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg"> {/* Enhanced shadow and rounding */}
+        <h1 className="text-3xl font-bold text-center text-slate-700 mb-2">
+          SIAP
         </h1>
-        <h2 className="text-xl font-semibold text-center text-gray-600 mb-6">Registrasi Akun Baru</h2>
+        <p className="text-center text-slate-500 mb-6 text-sm">
+          Sistem Informasi Administrasi dan Pengarsipan
+        </p>
+        <h2 className="text-2xl font-semibold text-center text-slate-600 mb-8">Registrasi Akun Baru</h2>
         <form onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm mb-4 text-center">{success}</p>}
+          {error && <p className="bg-rose-100 text-rose-700 p-3 rounded-md text-sm mb-4 text-center">{error}</p>}
+          {success && <p className="bg-emerald-100 text-emerald-700 p-3 rounded-md text-sm mb-4 text-center">{success}</p>}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nama">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5"> {/* Adjusted gap */}
+            <div> {/* Removed mb-4, gap handles spacing */}
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="nama">
                 Nama Lengkap
               </label>
-              <input type="text" id="nama" value={formData.nama} onChange={handleChange} className="input-field" placeholder="Nama Lengkap Anda" />
+              <input type="text" id="nama" value={formData.nama} onChange={handleChange} className="input-field" placeholder="Nama Lengkap Anda" required />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pangkat">
+            <div>
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="pangkat">
                 Pangkat
               </label>
-              <input type="text" id="pangkat" value={formData.pangkat} onChange={handleChange} className="input-field" placeholder="Pangkat Anda" />
+              <input type="text" id="pangkat" value={formData.pangkat} onChange={handleChange} className="input-field" placeholder="Pangkat Anda" required />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nrp">
+            <div>
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="nrp">
                 NRP
               </label>
               <input 
@@ -90,62 +93,46 @@ const RegisterPage = () => {
                 placeholder="NRP Anda (hanya angka)" 
                 pattern="\d*" 
                 title="NRP hanya boleh berisi angka."
+                required
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                Email
+            <div>
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="email">
+                Alamat Email
               </label>
-              <input type="email" id="email" value={formData.email} onChange={handleChange} className="input-field" placeholder="Email Anda" />
+              <input type="email" id="email" value={formData.email} onChange={handleChange} className="input-field" placeholder="contoh@email.com" required />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            <div>
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="password">
                 Password
               </label>
-              <input type="password" id="password" value={formData.password} onChange={handleChange} className="input-field" placeholder="Password" />
+              <input type="password" id="password" value={formData.password} onChange={handleChange} className="input-field" placeholder="Minimal 6 karakter" required />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="confirmPassword">
+            <div>
+              <label className="block text-slate-700 text-sm font-semibold mb-1.5" htmlFor="confirmPassword">
                 Konfirmasi Password
               </label>
-              <input type="password" id="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="input-field" placeholder="Konfirmasi Password" />
+              <input type="password" id="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="input-field" placeholder="Ulangi password" required />
             </div>
           </div>
           
-          <div className="flex items-center justify-between mt-6 mb-6">
+          <div className="mt-8 mb-6"> {/* Adjusted margin */}
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 transition-colors"
             >
-              Daftar
+              Daftar Akun
             </button>
           </div>
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-slate-600">
             Sudah punya akun?{' '}
-            <Link to="/login" className="font-bold text-blue-500 hover:text-blue-700">
+            <Link to="/login" className="font-semibold text-sky-600 hover:text-sky-700 hover:underline">
               Masuk di sini
             </Link>
           </p>
         </form>
       </div>
-      <style>{`
-        .input-field {
-          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-          appearance: none;
-          border-radius: 0.375rem;
-          border-width: 1px;
-          border-color: #D1D5DB; /* gray-300 */
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          color: #374151; /* gray-700 */
-          line-height: 1.5;
-        }
-        .input-field:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* blue-300 with opacity */
-          border-color: #3B82F6; /* blue-500 */
-        }
-      `}</style>
+      {/* .input-field styles are now global in index.css */}
     </div>
   );
 };

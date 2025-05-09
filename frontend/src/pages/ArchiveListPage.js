@@ -63,7 +63,6 @@ const ArchiveListPage = () => {
       const blob = await DocumentService.getDocumentAsBlob(doc.document_id, 'preview');
       const fileURL = URL.createObjectURL(blob);
       window.open(fileURL, '_blank');
-      // URL.revokeObjectURL(fileURL); // Optional: revoke after some time or on window close if possible
     } catch (error) {
       alert(error.message || 'Gagal memuat pratinjau dokumen.');
     }
@@ -183,24 +182,7 @@ const ArchiveListPage = () => {
               ))}
           </div>
       )}
-      <style>{`
-        .input-field {
-          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-          appearance: none;
-          border-radius: 0.375rem;
-          border-width: 1px;
-          border-color: #D1D5DB; /* gray-300 */
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          color: #374151; /* gray-700 */
-          line-height: 1.5;
-        }
-        .input-field:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* blue-300 with opacity */
-          border-color: #3B82F6; /* blue-500 */
-        }
-      `}</style>
+      {/* .input-field styles are now global in index.css */}
     </>
   );
 };

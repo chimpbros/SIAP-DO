@@ -20,35 +20,38 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gray-800 text-white p-4 shadow-lg">
+    <nav className="bg-slate-700 text-slate-100 p-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/dashboard" className="text-xl font-bold hover:text-gray-300">
-          SIAP (Sistem Informasi Administrasi dan Pengarsipan)
+        <Link to="/dashboard" className="text-2xl font-semibold hover:text-slate-300 transition-colors">
+          SIAP
         </Link>
-        <div className="space-x-4 flex items-center">
+        <div className="space-x-3 md:space-x-4 flex items-center">
           {user && (
             <>
-              <span className="text-sm">
-                {user.nama} ({user.pangkat} - {user.nrp}) {user.is_admin ? '[Admin]' : '[User]'}
+              <span className="hidden md:inline text-sm text-slate-300">
+                {user.nama} ({user.pangkat} - {user.nrp}) 
+                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${user.is_admin ? 'bg-sky-500 text-white' : 'bg-slate-500 text-slate-100'}`}>
+                  {user.is_admin ? 'Admin' : 'User'}
+                </span>
               </span>
-              <Link to="/dashboard" className="hover:text-gray-300">Dashboard</Link>
-              <Link to="/archive" className="hover:text-gray-300">Daftar Arsip</Link>
-              <Link to="/add" className="hover:text-gray-300">Tambah Dokumen</Link>
+              <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Dashboard</Link>
+              <Link to="/archive" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Daftar Arsip</Link>
+              <Link to="/add" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Tambah Dokumen</Link>
               {user.is_admin && (
-                <Link to="/admin" className="hover:text-gray-300">Admin Dashboard</Link>
+                <Link to="/admin" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Admin</Link>
               )}
               <button 
                 onClick={handleLogout} 
-                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded text-sm"
+                className="bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
               >
                 Logout
               </button>
             </>
           )}
-          {!user && (
+          {!user && ( // Should not typically be visible if MainLayout is used for authenticated routes
             <>
-              <Link to="/login" className="hover:text-gray-300">Login</Link>
-              <Link to="/register" className="hover:text-gray-300">Register</Link>
+              <Link to="/login" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Login</Link>
+              <Link to="/register" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Register</Link>
             </>
           )}
         </div>

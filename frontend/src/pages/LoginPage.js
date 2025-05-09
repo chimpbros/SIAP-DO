@@ -28,29 +28,33 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center text-gray-700 mb-6">
-          Sistem Informasi Administrasi dan Pengarsipan (SIAP)
+    <div className="min-h-screen flex flex-col items-center justify-center p-4"> {/* Removed bg-gray-100, will use body default */}
+      <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md"> {/* Enhanced shadow and rounding */}
+        <h1 className="text-3xl font-bold text-center text-slate-700 mb-2">
+          SIAP
         </h1>
-        <h2 className="text-xl font-semibold text-center text-gray-600 mb-6">Login</h2>
+        <p className="text-center text-slate-500 mb-6 text-sm">
+          Sistem Informasi Administrasi dan Pengarsipan
+        </p>
+        <h2 className="text-2xl font-semibold text-center text-slate-600 mb-8">Login Akun</h2>
         <form onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-              Email
+          {error && <p className="bg-rose-100 text-rose-700 p-3 rounded-md text-sm mb-4 text-center">{error}</p>}
+          <div className="mb-5"> {/* Increased margin */}
+            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="email">
+              Alamat Email
             </label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              placeholder="Masukkan email Anda"
+              className="input-field" // Using the class from RegisterPage for consistency
+              placeholder="contoh@email.com"
+              required
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="password">
               Password
             </label>
             <input
@@ -58,26 +62,28 @@ const LoginPage = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-              placeholder="Masukkan password Anda"
+              className="input-field" // Using the class from RegisterPage for consistency
+              placeholder="Masukkan password"
+              required
             />
           </div>
           <div className="flex items-center justify-between mb-6">
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 transition-colors"
             >
               Login
             </button>
           </div>
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-slate-600">
             Belum punya akun?{' '}
-            <Link to="/register" className="font-bold text-blue-500 hover:text-blue-700">
+            <Link to="/register" className="font-semibold text-sky-600 hover:text-sky-700 hover:underline">
               Daftar di sini
             </Link>
           </p>
         </form>
       </div>
+      {/* .input-field styles are now global in index.css */}
     </div>
   );
 };
