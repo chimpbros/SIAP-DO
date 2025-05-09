@@ -14,9 +14,10 @@ exports.register = async (req, res) => {
     return res.status(400).json({ message: 'Isian tidak lengkap.' });
   }
 
-  if (password !== confirmPassword) {
-    return res.status(400).json({ message: 'Password tidak cocok.' });
-  }
+  // Frontend handles password confirmation. confirmPassword is not sent to backend.
+  // if (password !== confirmPassword) { 
+  //   return res.status(400).json({ message: 'Password tidak cocok.' });
+  // }
 
   try {
     const existingUser = await User.findByEmail(email);

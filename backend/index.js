@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors'); // Import cors
 const path = require('path');
 const multer = require('multer'); // For MulterError
 const authRoutes = require('./routes/authRoutes');
@@ -9,6 +10,15 @@ const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Enable CORS for all routes and origins by default
+app.use(cors()); 
+// For more specific CORS options:
+// const corsOptions = {
+//   origin: 'http://localhost:3000', // Allow only your frontend origin
+//   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+// };
+// app.use(cors(corsOptions));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
