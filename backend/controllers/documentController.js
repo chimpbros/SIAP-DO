@@ -1,7 +1,7 @@
 const Document = require('../models/Document');
 const path = require('path');
 const fs = require('fs');
-// const exceljs = require('exceljs'); // We'll install this later if needed for Excel export
+const ExcelJS = require('exceljs');
 
 // Helper to create month_year string
 const getCurrentMonthYear = () => {
@@ -164,15 +164,45 @@ exports.exportDocumentsToExcel = async (req, res) => {
       return res.status(404).json({ message: 'Tidak ada dokumen untuk diekspor berdasarkan filter yang diberikan.' });
     }
     
-    // TODO: Implement Excel generation using a library like exceljs
-    // For now, send JSON as a placeholder
-    res.status(200).json({ 
-        message: 'Excel export functionality to be implemented. Here is the JSON data:', 
-        data: documents 
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Dokumen Arsip');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'Nomor Surat', key: 'nomor_surat', width: 30 },
+      { header: 'Tipe Surat', key: 'tipe_surat', width: 15 },
+      { header: 'Jenis Surat', key: 'jenis_surat', width: 15 },
+      { header: 'Perihal', key: 'perihal', width: 50 },
+      { header: 'Pengirim', key: 'pengirim', width: 30 },
+      { header: 'Isi Disposisi', key: 'isi_disposisi', width: 50 },
+      { header: 'Tanggal Upload', key: 'tanggal_upload', width: 20 },
+      { header: 'Uploader Nama', key: 'uploader_nama', width: 25 },
+      { header: 'Uploader NRP', key: 'uploader_nrp', width: 15 },
+      { header: 'Nama File Asli', key: 'original_filename', width: 30 },
+    ];
+
+    // Add rows
+    documents.forEach(doc => {
+      worksheet.addRow({
+        ...doc,
+        pengirim: doc.pengirim || 'N/A', // Handle null pengirim
+        isi_disposisi: doc.isi_disposisi || 'N/A' // Handle null isi_disposisi
+      });
     });
+
+    // Set response headers for Excel download
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `arsip_dokumen_${timestamp}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+    await workbook.xlsx.write(res);
+    res.end();
 
   } catch (error) {
     console.error('Error exporting documents to Excel:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengekspor dokumen.' });
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengekspor dokumen.' });
+    }
   }
 };
