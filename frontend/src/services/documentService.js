@@ -29,13 +29,27 @@ const DocumentService = {
     // This returns a URL that can be used in an <img> or <embed> or opened in new tab.
     // The actual file serving is handled by the backend, protected by auth middleware.
     // Token is added by axios interceptor.
-    return `${api.defaults.baseURL}/documents/${documentId}/preview`;
+    // This URL is fine if the backend can also authenticate via session cookie for direct browser access,
+    // but for pure token-based auth, we need to fetch via JS.
+    // Keeping this for reference or if direct GET is ever needed without JS fetch.
+    return `${api.defaults.baseURL}/documents/${documentId}/preview`; 
+  },
+
+  getDocumentAsBlob: async (documentId, actionType = 'preview') => { // actionType can be 'preview' or 'download'
+    try {
+      const response = await api.get(`/documents/${documentId}/${actionType}`, {
+        responseType: 'blob', // Important for file data
+      });
+      return response.data; // This will be a Blob
+    } catch (error) {
+      console.error(`Error fetching document for ${actionType}:`, error);
+      throw error.response?.data || { message: `Failed to fetch document for ${actionType}.` };
+    }
   },
   
-  downloadDocumentUrl: (documentId) => {
-    // Similar to preview, returns a URL for download.
-    return `${api.defaults.baseURL}/documents/${documentId}/download`;
-  },
+  // downloadDocumentUrl: (documentId) => { // This will be replaced by getDocumentAsBlob
+  //   return `${api.defaults.baseURL}/documents/${documentId}/download`;
+  // },
 
   exportDocumentsToExcelUrl: (params) => {
     // params: { searchTerm, month, year }

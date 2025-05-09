@@ -50,31 +50,39 @@ const ArchiveListPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to page 1
-    // fetchDocuments(1) will be triggered by useEffect due to currentPage change if fetchDocuments is stable
-    // or call it directly if preferred, but ensure currentPage is set first.
-    // For explicitness, especially if fetchDocuments itself doesn't change often:
+    setCurrentPage(1); 
     fetchDocuments(1); 
   };
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    // fetchDocuments will be called by the useEffect watching currentPage
   };
 
-  const handlePreview = (doc) => {
-    const previewUrl = DocumentService.previewDocumentUrl(doc.document_id);
-    window.open(previewUrl, '_blank');
+  const handlePreview = async (doc) => {
+    try {
+      const blob = await DocumentService.getDocumentAsBlob(doc.document_id, 'preview');
+      const fileURL = URL.createObjectURL(blob);
+      window.open(fileURL, '_blank');
+      // URL.revokeObjectURL(fileURL); // Optional: revoke after some time or on window close if possible
+    } catch (error) {
+      alert(error.message || 'Gagal memuat pratinjau dokumen.');
+    }
   };
 
-  const handleDownload = (doc) => {
-    const downloadUrl = DocumentService.downloadDocumentUrl(doc.document_id);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', doc.original_filename || 'download'); 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (doc) => {
+    try {
+      const blob = await DocumentService.getDocumentAsBlob(doc.document_id, 'download');
+      const fileURL = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.setAttribute('download', doc.original_filename || 'downloaded_file');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(fileURL);
+    } catch (error) {
+      alert(error.message || 'Gagal mengunduh dokumen.');
+    }
   };
   
   const handleExcelDownload = () => {
