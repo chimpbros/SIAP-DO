@@ -19,6 +19,9 @@ router.put('/users/:userId/revoke', adminController.revokeUserAccess);
 // PUT /api/admin/users/:userId/role - Set/remove admin privileges for a user
 router.put('/users/:userId/role', adminController.setUserAdminStatus);
 
+// DELETE /api/admin/users/:userId - Delete a user (registration request or existing user)
+router.delete('/users/:userId', adminController.deleteUserRegistration);
+
 // Note: Admin access to all documents (including STR) and Excel export for all documents
 // will be handled by the existing documentController methods,
 // where the `userIsAdmin` flag (derived from req.user.isAdmin) will control data visibility.

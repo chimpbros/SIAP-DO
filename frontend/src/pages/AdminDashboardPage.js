@@ -70,6 +70,20 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const handleDeleteUser = async (userId, userName) => {
+    setError('');
+    if (window.confirm(`Apakah Anda yakin ingin menghapus permintaan registrasi untuk ${userName}? Tindakan ini tidak dapat diurungkan.`)) {
+      try {
+        await AdminService.deleteUser(userId);
+        alert(`Permintaan registrasi untuk ${userName} berhasil dihapus.`);
+        fetchAllUsers(); // Refresh list
+      } catch (err) {
+        console.error("Failed to delete user registration", err);
+        alert(err.message || 'Gagal menghapus permintaan registrasi pengguna.');
+      }
+    }
+  };
+
   const UserTable = ({ title, userList, showAdminToggle = false, showApprovalActions = false, isPendingTable = false }) => (
     <div className="mb-8">
       <h2 className="text-xl font-semibold text-gray-700 mb-3">{title}</h2>
@@ -93,10 +107,13 @@ const AdminDashboardPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.is_admin ? 'Admin' : 'User'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {isPendingTable && ( // Only show Approve for pending table
-                      <button onClick={() => handleApprove(user.user_id)} className="text-green-600 hover:text-green-900">Setujui</button>
+                    {isPendingTable && ( 
+                      <>
+                        <button onClick={() => handleApprove(user.user_id)} className="text-green-600 hover:text-green-900">Setujui</button>
+                        <button onClick={() => handleDeleteUser(user.user_id, user.nama)} className="text-red-600 hover:text-red-900 ml-2">Hapus</button>
+                      </>
                     )}
-                    {!isPendingTable && user.is_approved && ( // Show Revoke and Admin toggle for approved users table
+                    {!isPendingTable && user.is_approved && ( 
                        <>
                         <button onClick={() => handleRevoke(user.user_id)} className="text-red-600 hover:text-red-900">Cabut Akses</button>
                         <button onClick={() => handleToggleAdmin(user.user_id, user.is_admin)} className="text-blue-600 hover:text-blue-900">

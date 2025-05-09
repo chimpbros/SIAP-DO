@@ -82,3 +82,36 @@ exports.setUserAdminStatus = async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
 };
+
+// Delete a user registration request (or any user, use with caution)
+exports.deleteUserRegistration = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+
+    // Optional: Add a check to prevent deleting an already approved admin,
+    // or only allow deleting users where is_approved is false.
+    // For now, this will delete any user by ID.
+    // if (user.is_approved && user.is_admin) {
+    //   return res.status(400).json({ message: 'Tidak dapat menghapus admin yang sudah disetujui.' });
+    // }
+
+    const deletedUser = await User.deleteById(userId);
+    if (deletedUser) {
+      res.status(200).json({ message: 'Registrasi pengguna berhasil dihapus.', userId: deletedUser.user_id });
+    } else {
+      // Should be caught by findById earlier, but as a fallback
+      res.status(404).json({ message: 'Pengguna tidak ditemukan atau sudah dihapus.' });
+    }
+  } catch (error) {
+    console.error('Error deleting user registration:', error);
+    // Check for foreign key constraint errors if user has related documents
+    if (error.constraint === 'documents_uploader_user_id_fkey') {
+        return res.status(400).json({ message: 'Tidak dapat menghapus pengguna ini karena mereka memiliki dokumen terkait. Hapus atau alihkan dokumen terlebih dahulu.' });
+    }
+    res.status(500).json({ message: 'Terjadi kesalahan pada server saat menghapus registrasi pengguna.' });
+  }
+};

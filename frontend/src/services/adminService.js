@@ -36,6 +36,15 @@ const AdminService = {
       throw error.response?.data || { message: 'Failed to set user admin status.' };
     }
   },
+
+  deleteUser: async (userId) => {
+    try {
+      const response = await api.delete(`/admin/users/${userId}`);
+      return response.data; // Expected: { message: string, userId: string }
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to delete user.' };
+    }
+  },
 };
 
 export default AdminService;

@@ -93,6 +93,21 @@ const User = {
       console.error('Error setting admin status:', error);
       throw error;
     }
+  },
+
+  async deleteById(userId) {
+    // This will permanently delete the user. 
+    // Ensure this is the desired behavior for a "registration request deletion".
+    // If the user is already approved, this would delete an active user.
+    // For pending requests (is_approved = FALSE), this is effectively rejecting and deleting.
+    const query = 'DELETE FROM users WHERE user_id = $1 RETURNING user_id;'; // RETURNING helps confirm deletion
+    try {
+      const { rows } = await db.query(query, [userId]);
+      return rows[0]; // Returns { user_id: '...' } if successful, or undefined if not found
+    } catch (error) {
+      console.error('Error deleting user by ID:', error);
+      throw error;
+    }
   }
 };
 
