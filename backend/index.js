@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer'); // For MulterError
 const authRoutes = require('./routes/authRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 // Document routes
 app.use('/api/documents', documentRoutes);
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
 // Serve uploaded files statically from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
