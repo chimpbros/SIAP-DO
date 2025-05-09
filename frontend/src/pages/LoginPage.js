@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// import axios from 'axios'; // We'll use this later
+import AuthService from '../services/authService';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -17,27 +17,13 @@ const LoginPage = () => {
       return;
     }
     console.log('Login attempt with:', { email, password });
-    // TODO: Implement actual API call to /api/auth/login
-    // try {
-    //   const response = await axios.post('/api/auth/login', { email, password });
-    //   localStorage.setItem('token', response.data.token);
-    //   localStorage.setItem('user', JSON.stringify(response.data.user));
-    //   navigate('/dashboard');
-    // } catch (err) {
-    //   setError(err.response?.data?.message || 'Login gagal. Silakan coba lagi.');
-    // }
-    alert('Login functionality to be implemented. Check console for data.');
-    // Simulate login for now
-    if (email === "admin@example.com" && password === "password") {
-        localStorage.setItem('token', 'fake-admin-token');
-        localStorage.setItem('user', JSON.stringify({ email: "admin@example.com", is_admin: true, is_approved: true, nama: "Admin User", pangkat: "ADM", nrp: "000" }));
-        navigate('/dashboard');
-    } else if (email === "user@example.com" && password === "password") {
-        localStorage.setItem('token', 'fake-user-token');
-        localStorage.setItem('user', JSON.stringify({ email: "user@example.com", is_admin: false, is_approved: true, nama: "Regular User", pangkat: "USR", nrp: "111" }));
-        navigate('/dashboard');
-    } else {
-        setError('Email atau password salah (gunakan admin@example.com atau user@example.com dengan password "password" untuk demo).');
+    try {
+      const data = await AuthService.login(email, password);
+      // AuthService.login already sets localStorage
+      console.log('Login successful:', data);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Login gagal. Silakan coba lagi.');
     }
   };
 

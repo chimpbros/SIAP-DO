@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// import axios from 'axios';
+import AuthService from '../services/authService';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -34,23 +34,18 @@ const RegisterPage = () => {
     }
     
     console.log('Register attempt with:', formData);
-    // TODO: Implement actual API call to /api/auth/register
-    // try {
-    //   const response = await axios.post('/api/auth/register', {
-    //     nama: formData.nama,
-    //     pangkat: formData.pangkat,
-    //     nrp: formData.nrp,
-    //     email: formData.email,
-    //     password: formData.password,
-    //   });
-    //   setSuccess(response.data.message || 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.');
-    //   setTimeout(() => navigate('/login'), 3000); // Redirect after a delay
-    // } catch (err) {
-    //   setError(err.response?.data?.message || 'Registrasi gagal. Silakan coba lagi.');
-    // }
-    alert('Register functionality to be implemented. Check console for data.');
-    setSuccess('Pendaftaran berhasil (simulasi)! Akun Anda menunggu persetujuan admin. Anda akan dialihkan ke halaman Login.');
-    setTimeout(() => navigate('/login'), 3000);
+    try {
+      // AuthService.register expects userData to include: nama, pangkat, nrp, email, password
+      // confirmPassword is only for frontend validation here
+      const { confirmPassword, ...userData } = formData;
+      const data = await AuthService.register(userData);
+      setSuccess(data.message || 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.');
+      // Clear form or specific fields if needed
+      setFormData({ nama: '', pangkat: '', nrp: '', email: '', password: '', confirmPassword: '' });
+      setTimeout(() => navigate('/login'), 3000); // Redirect after a delay
+    } catch (err) {
+      setError(err.message || 'Registrasi gagal. Silakan coba lagi.');
+    }
   };
 
   return (
