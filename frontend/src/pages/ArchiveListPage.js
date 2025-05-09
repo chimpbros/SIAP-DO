@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // Navbar is now in MainLayout
 import DocumentService from '../services/documentService';
 import AuthService from '../services/authService'; // To get current user for admin check
@@ -18,7 +18,7 @@ const ArchiveListPage = () => {
     setUser(currentUser);
   }, []);
 
-  const fetchDocuments = async (page = 1) => {
+  const fetchDocuments = useCallback(async (page = 1) => {
     setLoading(true);
     console.log(`Fetching documents for page: ${page}, search: ${searchTerm}, month: ${filterMonth}, year: ${filterYear}`);
     try {
@@ -31,7 +31,7 @@ const ArchiveListPage = () => {
       };
       const data = await DocumentService.listDocuments(params);
       setDocuments(data.documents);
-      setCurrentPage(data.currentPage);
+      setCurrentPage(data.currentPage); // Ensure currentPage is updated from response
       setTotalPages(data.totalPages);
     } catch (error) {
       console.error("Failed to fetch documents", error);
@@ -40,18 +40,26 @@ const ArchiveListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, filterMonth, filterYear]); // Dependencies of fetchDocuments
   
   useEffect(() => {
     if (user) { 
         fetchDocuments(currentPage);
     }
-  }, [user, currentPage]);
+  }, [user, currentPage, fetchDocuments]); // Added fetchDocuments to dependency array
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); 
+    setCurrentPage(1); // Reset to page 1
+    // fetchDocuments(1) will be triggered by useEffect due to currentPage change if fetchDocuments is stable
+    // or call it directly if preferred, but ensure currentPage is set first.
+    // For explicitness, especially if fetchDocuments itself doesn't change often:
     fetchDocuments(1); 
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    // fetchDocuments will be called by the useEffect watching currentPage
   };
 
   const handlePreview = (doc) => {
@@ -114,7 +122,7 @@ const ArchiveListPage = () => {
         </div>
       </form>
 
-      {user?.is_admin && ( // Check user directly from state
+      {user?.is_admin && ( 
         <div className="mb-4 text-right">
           <button onClick={handleExcelDownload} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
             Download Data (Excel)
@@ -159,7 +167,7 @@ const ArchiveListPage = () => {
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
                   <button
                       key={pageNumber}
-                      onClick={() => { setCurrentPage(pageNumber); fetchDocuments(pageNumber);}}
+                      onClick={() => handlePageChange(pageNumber)}
                       className={`mx-1 px-3 py-1 border rounded ${currentPage === pageNumber ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'}`}
                   >
                       {pageNumber}

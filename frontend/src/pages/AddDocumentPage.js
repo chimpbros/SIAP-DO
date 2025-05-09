@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'; // useNavigate removed
 // Navbar is now in MainLayout
 import DocumentService from '../services/documentService';
 
@@ -15,7 +15,7 @@ const AddDocumentPage = () => {
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Removed
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -67,7 +67,7 @@ const AddDocumentPage = () => {
       setTimeout(() => {
         setSuccess('');
         // Optionally navigate or stay on page
-        // navigate('/archive'); 
+        // navigate('/archive'); // If navigation is desired, re-add useNavigate and uncomment
       }, 3000);
     } catch (err) {
       setError(err.message || 'Gagal menambahkan dokumen. Silakan coba lagi.');
