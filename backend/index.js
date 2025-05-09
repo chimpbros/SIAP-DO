@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const multer = require('multer'); // For MulterError
 const authRoutes = require('./routes/authRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,9 +20,26 @@ app.get('/', (req, res) => {
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
+// Document routes
+app.use('/api/documents', documentRoutes);
 
-// Serve uploaded files statically (optional, adjust path as needed)
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded files statically from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Global error handler for multer
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // A Multer error occurred when uploading.
+    return res.status(400).json({ message: err.message });
+  } else if (err) {
+    // An unknown error occurred when uploading.
+    // Also handles errors from fileFilter in uploadMiddleware
+    return res.status(400).json({ message: err.message || 'File upload error.' });
+  }
+  // Everything went fine.
+  next();
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
