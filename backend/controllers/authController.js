@@ -14,6 +14,11 @@ exports.register = async (req, res) => {
     return res.status(400).json({ message: 'Isian tidak lengkap.' });
   }
 
+  // NRP validation (only numbers)
+  if (!/^\d+$/.test(nrp)) {
+    return res.status(400).json({ message: 'NRP hanya boleh berisi angka.' });
+  }
+
   // Frontend handles password confirmation. confirmPassword is not sent to backend.
   // if (password !== confirmPassword) { 
   //   return res.status(400).json({ message: 'Password tidak cocok.' });

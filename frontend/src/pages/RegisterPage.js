@@ -32,6 +32,11 @@ const RegisterPage = () => {
       setError('Semua field wajib diisi.');
       return;
     }
+    // NRP validation (only numbers)
+    if (!/^\d+$/.test(formData.nrp)) {
+      setError('NRP hanya boleh berisi angka.');
+      return;
+    }
     
     console.log('Register attempt with:', formData);
     try {
@@ -76,7 +81,16 @@ const RegisterPage = () => {
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nrp">
                 NRP
               </label>
-              <input type="text" id="nrp" value={formData.nrp} onChange={handleChange} className="input-field" placeholder="NRP Anda" />
+              <input 
+                type="text" 
+                id="nrp" 
+                value={formData.nrp} 
+                onChange={handleChange} 
+                className="input-field" 
+                placeholder="NRP Anda (hanya angka)" 
+                pattern="\d*" 
+                title="NRP hanya boleh berisi angka."
+              />
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
