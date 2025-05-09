@@ -2,7 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatsService from '../services/statsService';
-import AuthService from '../services/authService'; // To get current user for name display
+import AuthService from '../services/authService';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const DashboardPage = () => {
   const [docCountThisMonth, setDocCountThisMonth] = useState(0);
@@ -70,10 +89,45 @@ const DashboardPage = () => {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">Statistik Upload Bulanan</h2>
           <div className="h-64 bg-gray-200 flex items-center justify-center rounded">
             {/* Placeholder for chart - e.g., using Chart.js */}
-            <p className="text-gray-500">
-              [Chart akan ditampilkan di sini menampilkan data: 
-              {monthlyStats.map(s => `(${s.month}: ${s.count})`).join(', ')}]
-            </p>
+            {monthlyStats.length > 0 ? (
+              <Bar 
+                data={{
+                  labels: monthlyStats.map(s => s.month_year),
+                  datasets: [
+                    {
+                      label: 'Jumlah Dokumen Diupload',
+                      data: monthlyStats.map(s => s.count),
+                      backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                      borderColor: 'rgba(54, 162, 235, 1)',
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                    },
+                    title: {
+                      display: true,
+                      text: 'Grafik Upload Dokumen per Bulan (12 Bulan Terakhir)',
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1, // Ensure y-axis shows whole numbers for counts
+                      }
+                    }
+                  }
+                }} 
+              />
+            ) : (
+              <p className="text-gray-500">Data statistik bulanan tidak tersedia atau sedang dimuat...</p>
+            )}
           </div>
         </div>
       </div>
