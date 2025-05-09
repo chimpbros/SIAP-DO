@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+// Navbar is now in MainLayout
 import StatsService from '../services/statsService';
 import AuthService from '../services/authService';
 import { Bar } from 'react-chartjs-2';
@@ -58,10 +58,9 @@ const DashboardPage = () => {
   }, []);
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+    // Navbar removed, padding is now handled by MainLayout's <main> tag
+    <> 
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
         <p className="text-lg text-gray-600 mb-8">Selamat datang kembali, {userName || 'Pengguna'}!</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -130,8 +129,8 @@ const DashboardPage = () => {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      {/* Removed redundant closing div, container is in MainLayout */}
+    </>
   );
 };
 

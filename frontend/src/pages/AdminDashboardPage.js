@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+// Navbar is now in MainLayout
 import AdminService from '../services/adminService';
 
 const AdminDashboardPage = () => {
@@ -117,10 +117,9 @@ const AdminDashboardPage = () => {
   );
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+    // Navbar removed, container and padding are now handled by MainLayout's <main> tag
+    <>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
         
         <UserTable title="Permintaan Registrasi Tertunda" userList={pendingRequests} isPendingTable={true} />
         <UserTable title="Daftar Pengguna Terdaftar" userList={users} showAdminToggle={true} />
@@ -132,8 +131,8 @@ const AdminDashboardPage = () => {
           </Link>
           {/* The ArchiveListPage will handle STR visibility based on admin status */}
         </div>
-      </div>
-    </div>
+      {/* Removed redundant closing div for container */}
+    </>
   );
 };
 

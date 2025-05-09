@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+// Navbar is now in MainLayout
 import DocumentService from '../services/documentService';
 
 const AddDocumentPage = () => {
@@ -75,73 +75,71 @@ const AddDocumentPage = () => {
   };
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Dokumen Baru</h1>
-        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit}>
-            {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-            {success && <p className="text-green-500 text-sm mb-4 text-center">{success}</p>}
+    // Navbar removed, container and padding are now handled by MainLayout's <main> tag
+    <>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Dokumen Baru</h1>
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit}>
+          {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+          {success && <p className="text-green-500 text-sm mb-4 text-center">{success}</p>}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="tipe_surat">Tipe Surat</label>
-                <select id="tipe_surat" value={formData.tipe_surat} onChange={handleChange} className="input-field">
-                  <option value="Surat Masuk">Surat Masuk</option>
-                  <option value="Surat Keluar">Surat Keluar</option>
-                </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="tipe_surat">Tipe Surat</label>
+              <select id="tipe_surat" value={formData.tipe_surat} onChange={handleChange} className="input-field">
+                <option value="Surat Masuk">Surat Masuk</option>
+                <option value="Surat Keluar">Surat Keluar</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="jenis_surat">Jenis Surat</label>
+              <select id="jenis_surat" value={formData.jenis_surat} onChange={handleChange} className="input-field">
+                <option value="ST">ST (Surat Telegram)</option>
+                <option value="STR">STR (Surat Telegram Rahasia)</option>
+                <option value="Biasa">Biasa</option>
+                <option value="Sprin">Sprin (Surat Perintah)</option>
+                <option value="Nota Dinas">Nota Dinas</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nomor_surat">Nomor Surat</label>
+            <input type="text" id="nomor_surat" value={formData.nomor_surat} onChange={handleChange} className="input-field" placeholder="Nomor Surat" />
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="perihal">Perihal</label>
+            <textarea id="perihal" value={formData.perihal} onChange={handleChange} className="input-field h-24" placeholder="Perihal Dokumen"></textarea>
+          </div>
+
+          {formData.tipe_surat === 'Surat Masuk' && (
+            <>
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pengirim">Pengirim</label>
+                <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field" placeholder="Nama Pengirim" />
               </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="jenis_surat">Jenis Surat</label>
-                <select id="jenis_surat" value={formData.jenis_surat} onChange={handleChange} className="input-field">
-                  <option value="ST">ST (Surat Telegram)</option>
-                  <option value="STR">STR (Surat Telegram Rahasia)</option>
-                  <option value="Biasa">Biasa</option>
-                  <option value="Sprin">Sprin (Surat Perintah)</option>
-                  <option value="Nota Dinas">Nota Dinas</option>
-                </select>
+              <div className="mt-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="isi_disposisi">Isi Disposisi</label>
+                <textarea id="isi_disposisi" value={formData.isi_disposisi} onChange={handleChange} className="input-field h-20" placeholder="Isi Disposisi"></textarea>
               </div>
-            </div>
+            </>
+          )}
 
-            <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nomor_surat">Nomor Surat</label>
-              <input type="text" id="nomor_surat" value={formData.nomor_surat} onChange={handleChange} className="input-field" placeholder="Nomor Surat" />
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="perihal">Perihal</label>
-              <textarea id="perihal" value={formData.perihal} onChange={handleChange} className="input-field h-24" placeholder="Perihal Dokumen"></textarea>
-            </div>
-
-            {formData.tipe_surat === 'Surat Masuk' && (
-              <>
-                <div className="mt-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pengirim">Pengirim</label>
-                  <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field" placeholder="Nama Pengirim" />
-                </div>
-                <div className="mt-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="isi_disposisi">Isi Disposisi</label>
-                  <textarea id="isi_disposisi" value={formData.isi_disposisi} onChange={handleChange} className="input-field h-20" placeholder="Isi Disposisi"></textarea>
-                </div>
-              </>
-            )}
-
-            <div className="mt-6">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lampiran_surat">Lampiran Surat (PDF, JPG, PNG)</label>
-              <input type="file" id="lampiran_surat" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept=".pdf,.jpg,.jpeg,.png" />
-            </div>
-            
-            <div className="mt-8 flex justify-end space-x-4">
-              <Link to="/archive" className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Kembali ke Daftar Arsip
-              </Link>
-              <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Simpan Dokumen
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="mt-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lampiran_surat">Lampiran Surat (PDF, JPG, PNG)</label>
+            <input type="file" id="lampiran_surat" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          
+          <div className="mt-8 flex justify-end space-x-4">
+            <Link to="/archive" className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Kembali ke Daftar Arsip
+            </Link>
+            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Simpan Dokumen
+            </button>
+          </div>
+        </form>
       </div>
       <style jsx>{`
         .input-field {
@@ -161,7 +159,7 @@ const AddDocumentPage = () => {
           border-color: #3B82F6; /* blue-500 */
         }
       `}</style>
-    </div>
+    </>
   );
 };
 

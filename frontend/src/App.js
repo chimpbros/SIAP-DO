@@ -7,36 +7,38 @@ import DashboardPage from './pages/DashboardPage';
 import AddDocumentPage from './pages/AddDocumentPage';
 import ArchiveListPage from './pages/ArchiveListPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
-import Navbar from './components/Navbar'; 
+// Navbar is now part of MainLayout
 import AuthService from './services/authService'; // Import AuthService
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 import AdminRoute from './components/AdminRoute'; // Import AdminRoute
+import MainLayout from './components/MainLayout'; // Import MainLayout
 
 function App() {
   return (
     <Router>
-      {/* Navbar might be conditional or part of a layout component */}
-      {/* <Navbar /> */} 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
-        <Route 
-          path="/dashboard" 
-          element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} 
-        />
-        <Route 
-          path="/add" 
-          element={<ProtectedRoute><AddDocumentPage /></ProtectedRoute>} 
-        />
-        <Route 
-          path="/archive" 
-          element={<ProtectedRoute><ArchiveListPage /></ProtectedRoute>} 
-        />
-        <Route 
-          path="/admin" 
-          element={<AdminRoute><AdminDashboardPage /></AdminRoute>} 
-        />
+        {/* Routes that use MainLayout (includes Navbar) */}
+        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/add" element={<AddDocumentPage />} />
+          <Route path="/archive" element={<ArchiveListPage />} />
+        </Route>
+        
+        <Route element={<AdminRoute><MainLayout /></AdminRoute>}>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          {/* If admin also needs access to regular user pages via MainLayout, 
+              ensure AdminRoute allows this or structure routes differently.
+              For now, /admin is distinct. If admin should also see /dashboard, /add, /archive
+              through the same layout, ProtectedRoute should handle admin role or AdminRoute
+              should wrap those specific routes as well if they have admin-specific variations.
+              Current setup: AdminRoute protects /admin. ProtectedRoute protects others.
+              If an admin logs in, they can access /dashboard, /add, /archive via ProtectedRoute,
+              and /admin via AdminRoute. This seems fine.
+          */}
+        </Route>
 
         {/* Redirect root to login or dashboard based on auth */}
         <Route 
