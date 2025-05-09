@@ -1,0 +1,96 @@
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+
+const generateToken = (userId, isAdmin) => {
+  return jwt.sign({ userId, isAdmin }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+  });
+};
+
+exports.register = async (req, res) => {
+  const { email, password, nama, pangkat, nrp, confirmPassword } = req.body;
+
+  if (!email || !password || !nama || !pangkat || !nrp) {
+    return res.status(400).json({ message: 'Isian tidak lengkap.' });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: 'Password tidak cocok.' });
+  }
+
+  try {
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email sudah terdaftar.' });
+    }
+
+    const newUser = await User.create({ email, password, nama, pangkat, nrp });
+    // Exclude password_hash from the response
+    const { password_hash, ...userWithoutPassword } = newUser; 
+
+    res.status(201).json({
+      message: 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.',
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+};
+
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email dan password harus diisi.' });
+  }
+
+  try {
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ message: 'Email atau password salah.' });
+    }
+
+    const isMatch = await User.comparePassword(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Email atau password salah.' });
+    }
+
+    if (!user.is_approved) {
+      return res.status(403).json({ message: 'Akun Anda belum disetujui admin atau telah dinonaktifkan.' });
+    }
+
+    const token = generateToken(user.user_id, user.is_admin);
+    
+    // Exclude password_hash from the user object sent in response
+    const { password_hash, ...userWithoutPassword } = user;
+
+    res.status(200).json({
+      message: 'Login berhasil.',
+      token,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+};
+
+exports.getCurrentUser = async (req, res) => {
+  // This route will be protected, req.user will be populated by auth middleware
+  if (!req.user || !req.user.userId) {
+    return res.status(401).json({ message: 'Tidak terautentikasi.' });
+  }
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+    // Ensure password_hash is not sent, even though findById doesn't select it
+    const { password_hash, ...userWithoutPassword } = user; 
+    res.status(200).json(userWithoutPassword);
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+};
