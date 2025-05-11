@@ -84,14 +84,23 @@ const ArchiveListPage = () => {
     }
   };
   
-  const handleExcelDownload = () => {
+  const handleExcelDownload = async () => { // Make function async
     const params = { 
         searchTerm: searchTerm || undefined, 
         month: filterMonth || undefined, 
         year: filterYear || undefined 
     };
-    const excelUrl = DocumentService.exportDocumentsToExcelUrl(params);
-    window.open(excelUrl, '_blank'); 
+    try {
+      // setLoading(true); // Optional: add loading state for download button
+      await DocumentService.downloadExcelExport(params);
+      // setLoading(false);
+      // No need to open window, service handles download
+      // alert('Excel export started.'); // Optional: success feedback
+    } catch (error) {
+      // setLoading(false);
+      console.error("Excel export failed", error);
+      alert(error.message || "Gagal mengunduh data Excel.");
+    }
   };
 
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
@@ -142,9 +151,14 @@ const ArchiveListPage = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['No Surat', 'Tipe', 'Jenis', 'Perihal', 'Pengirim', 'Tgl Upload', 'Uploader', 'Aksi'].map(header => (
-                  <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{header}</th>
-                ))}
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No Surat</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perihal</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pengirim</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tgl Upload</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Uploader</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -154,16 +168,16 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.tipe_surat}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.jenis_surat}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={doc.perihal}>{doc.perihal}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.pengirim || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.upload_timestamp}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.uploader_nama}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
                     <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
+                <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500 sm:colSpan-7 md:colSpan-8">Tidak ada dokumen ditemukan.</td></tr>
               )}
             </tbody>
           </table>

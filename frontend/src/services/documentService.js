@@ -60,33 +60,46 @@ const DocumentService = {
     // For simplicity, if backend session is not used, this might require a GET request via axios that handles blob response.
   },
 
-  // Placeholder for actual Excel download if direct URL with token is problematic
-  // downloadExcelExport: async (params) => {
-  //   try {
-  //     const response = await api.get('/documents/export/excel', { 
-  //       params,
-  //       responseType: 'blob', // Important for file downloads
-  //     });
-  //     // Create a link and click it to trigger download
-  //     const url = window.URL.createObjectURL(new Blob([response.data]));
-  //     const link = document.createElement('a');
-  //     link.href = url;
-  //     const contentDisposition = response.headers['content-disposition'];
-  //     let fileName = 'exported_documents.xlsx';
-  //     if (contentDisposition) {
-  //         const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/i);
-  //         if (fileNameMatch.length === 2) fileName = fileNameMatch[1];
-  //     }
-  //     link.setAttribute('download', fileName);
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     link.remove();
-  //     window.URL.revokeObjectURL(url);
-  //     return { success: true, message: 'File downloaded.' };
-  //   } catch (error) {
-  //     throw error.response?.data || { message: 'Failed to download Excel file.' };
-  //   }
-  // }
+  downloadExcelExport: async (params) => {
+    try {
+      const response = await api.get('/documents/export/excel', { 
+        params,
+        responseType: 'blob', // Important for file downloads
+      });
+      // Create a link and click it to trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const contentDisposition = response.headers['content-disposition'];
+      let fileName = 'exported_documents.xlsx'; // Default filename
+      if (contentDisposition) {
+          const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+          if (fileNameMatch && fileNameMatch.length === 2) fileName = fileNameMatch[1];
+      }
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove(); // Clean up the link element
+      window.URL.revokeObjectURL(url); // Clean up the blob URL
+      return { success: true, message: 'File download initiated.' }; // Or simply return nothing on success
+    } catch (error) {
+      // Handle error, perhaps by trying to parse error response if it's JSON
+      // For blob responses, error might not be easily parsable as JSON if server sends error with wrong content-type
+      console.error('Excel download error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Gagal mengunduh file Excel.';
+      // If error.response.data is a Blob, it needs to be read as text
+      if (error.response && error.response.data instanceof Blob && error.response.data.type.includes('application/json')) {
+        try {
+            const errorJson = JSON.parse(await error.response.data.text());
+            throw errorJson; // Throw the parsed JSON error object
+        } catch (parseError) {
+            console.error('Error parsing blob error response:', parseError);
+            throw { message: errorMessage };
+        }
+      }
+      throw { message: errorMessage };
+    }
+  }
 };
 
 export default DocumentService;
