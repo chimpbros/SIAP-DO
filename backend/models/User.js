@@ -34,12 +34,36 @@ const User = {
   },
 
   async findById(userId) {
+    // This version is for general use, does not return password hash
     const query = 'SELECT user_id, email, nama, pangkat, nrp, is_admin, is_approved FROM users WHERE user_id = $1;';
     try {
       const { rows } = await db.query(query, [userId]);
       return rows[0];
     } catch (error) {
       console.error('Error finding user by ID:', error);
+      throw error;
+    }
+  },
+
+  async findByIdWithPasswordHash(userId) {
+    // This version is specifically for operations needing the password hash, like password change
+    const query = 'SELECT * FROM users WHERE user_id = $1;'; // Select all fields including password_hash
+    try {
+      const { rows } = await db.query(query, [userId]);
+      return rows[0];
+    } catch (error) {
+      console.error('Error finding user by ID with password hash:', error);
+      throw error;
+    }
+  },
+
+  async updatePasswordHash(userId, newPasswordHash) {
+    const query = 'UPDATE users SET password_hash = $1 WHERE user_id = $2 RETURNING user_id;';
+    try {
+      const { rows } = await db.query(query, [newPasswordHash, userId]);
+      return rows[0]; // Returns { user_id: '...' } or undefined
+    } catch (error) {
+      console.error('Error updating password hash:', error);
       throw error;
     }
   },

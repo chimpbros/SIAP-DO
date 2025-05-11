@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); // Import bcryptjs
 
 const generateToken = (userId, isAdmin) => {
   return jwt.sign({ userId, isAdmin }, process.env.JWT_SECRET, {
@@ -98,5 +99,46 @@ exports.getCurrentUser = async (req, res) => {
   } catch (error) {
     console.error('Get current user error:', error);
     res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  const { oldPassword, newPassword, confirmNewPassword } = req.body;
+  const userId = req.user.userId;
+
+  if (!oldPassword || !newPassword || !confirmNewPassword) {
+    return res.status(400).json({ message: 'Semua field wajib diisi.' });
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({ message: 'Password baru dan konfirmasi password tidak cocok.' });
+  }
+
+  // Optional: Add password strength validation for newPassword here if desired
+
+  try {
+    const user = await User.findByIdWithPasswordHash(userId);
+    if (!user) {
+      // This case should ideally not happen if protect middleware works correctly
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+    }
+
+    const isMatch = await User.comparePassword(oldPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Password lama salah.' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update the password hash in the database
+    await User.updatePasswordHash(userId, newPasswordHash);
+
+    res.status(200).json({ message: 'Password berhasil diubah.' });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengubah password.' });
   }
 };

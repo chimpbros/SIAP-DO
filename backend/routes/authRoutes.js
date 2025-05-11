@@ -7,5 +7,6 @@ const router = express.Router();
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/me', protect, authController.getCurrentUser); // Protected route
+router.post('/change-password', protect, authController.changePassword); // Add change password route
 
 module.exports = router;

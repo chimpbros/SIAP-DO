@@ -39,6 +39,22 @@ const AuthService = {
     return !!localStorage.getItem('token');
   },
 
+  changePassword: async (passwordData) => {
+    // passwordData should include: oldPassword, newPassword, confirmNewPassword
+    // Backend expects oldPassword, newPassword
+    try {
+      const payload = {
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword,
+        confirmNewPassword: passwordData.confirmNewPassword, // Backend will validate newPassword === confirmNewPassword
+      };
+      const response = await api.post('/auth/change-password', payload);
+      return response.data; // Should be a success message e.g., { message: 'Password berhasil diubah.' }
+    } catch (error) {
+      throw error.response?.data || { message: 'Gagal mengubah password karena kesalahan jaringan.' };
+    }
+  },
+
   // Optional: Fetch current user details from backend to verify token and get fresh data
   // verifyCurrentUser: async () => {
   //   try {
