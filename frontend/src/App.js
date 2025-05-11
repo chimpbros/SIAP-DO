@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import AddDocumentPage from './pages/AddDocumentPage';
 import ArchiveListPage from './pages/ArchiveListPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import ProfilePage from './pages/ProfilePage'; // Import ProfilePage
 // Navbar is now part of MainLayout
 import AuthService from './services/authService'; // Import AuthService
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
@@ -25,6 +26,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/add" element={<AddDocumentPage />} />
           <Route path="/archive" element={<ArchiveListPage />} />
+          <Route path="/profile" element={<ProfilePage />} /> {/* Add ProfilePage route */}
         </Route>
         
         <Route element={<AdminRoute><MainLayout /></AdminRoute>}>

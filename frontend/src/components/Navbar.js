@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const Navbar = () => {
   const [user, setUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false); // New state for profile dropdown
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,24 +45,54 @@ const Navbar = () => {
         <div className="hidden md:flex space-x-3 md:space-x-4 items-center">
           {user && (
             <>
-              <span className="text-sm text-slate-300">
-                {user.nama} ({user.pangkat} - {user.nrp}) 
-                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${user.is_admin ? 'bg-sky-500 text-white' : 'bg-slate-500 text-slate-100'}`}>
-                  {user.is_admin ? 'Admin' : 'User'}
-                </span>
-              </span>
+              {/* Main Navigation Links */}
               <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Dashboard</Link>
               <Link to="/archive" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Daftar Arsip</Link>
               <Link to="/add" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Tambah Dokumen</Link>
               {user.is_admin && (
                 <Link to="/admin" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-slate-600 transition-colors">Admin</Link>
               )}
-              <button 
-                onClick={handleLogout} 
-                className="bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
-              >
-                Logout
-              </button>
+
+              {/* Profile Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className="flex items-center space-x-2 text-sm text-slate-100 hover:text-slate-300 focus:outline-none p-2 rounded-md hover:bg-slate-600"
+                >
+                  {/* Avatar Icon (simple one for now) */}
+                  <svg className="w-8 h-8 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
+                  </svg>
+                  <span>{user.nama || 'User'}</span>
+                  {/* Dropdown Arrow */}
+                  <svg className={`w-4 h-4 transition-transform duration-200 ${isProfileDropdownOpen ? 'transform rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </button>
+                {isProfileDropdownOpen && (
+                  <div 
+                    onMouseLeave={() => setIsProfileDropdownOpen(false)} // Optional: close on mouse leave
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 text-slate-700 ring-1 ring-black ring-opacity-5">
+                    <div className="px-4 py-3">
+                      <p className="text-sm">Welcome !</p>
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                    </div>
+                    <Link 
+                      to="/profile" 
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="block px-4 py-2 text-sm hover:bg-slate-100"
+                    >
+                      My Account
+                    </Link>
+                    <button 
+                      onClick={() => { handleLogout(); setIsProfileDropdownOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 text-rose-600"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
           {!user && (
@@ -79,21 +110,24 @@ const Navbar = () => {
           <div className="flex flex-col space-y-2 items-start">
             {user && (
               <>
-                <span className="px-3 py-2 text-sm text-slate-300 w-full text-left">
-                  {user.nama} ({user.pangkat} - {user.nrp})
-                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${user.is_admin ? 'bg-sky-500 text-white' : 'bg-slate-500 text-slate-100'}`}>
+                {/* Mobile menu: User Info, then links, then Profile, then Logout */}
+                <div className="px-3 py-2">
+                  <p className="text-sm font-medium text-slate-100">{user.nama}</p>
+                  <p className="text-xs text-slate-300">{user.email}</p>
+                  <p className={`mt-1 px-2 py-0.5 rounded-full text-xs inline-block ${user.is_admin ? 'bg-sky-500 text-white' : 'bg-slate-500 text-slate-100'}`}>
                     {user.is_admin ? 'Admin' : 'User'}
-                  </span>
-                </span>
+                  </p>
+                </div>
                 <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors w-full text-left">Dashboard</Link>
                 <Link to="/archive" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors w-full text-left">Daftar Arsip</Link>
                 <Link to="/add" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors w-full text-left">Tambah Dokumen</Link>
                 {user.is_admin && (
                   <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors w-full text-left">Admin</Link>
                 )}
+                <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors w-full text-left">My Account</Link>
                 <button 
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 px-3 rounded-md text-base transition-colors w-full text-left"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-slate-600 transition-colors text-rose-400"
                 >
                   Logout
                 </button>
