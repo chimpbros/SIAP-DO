@@ -22,7 +22,20 @@ const AddDocumentPage = () => {
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      const maxSize = 512 * 1024; // 512 KB
+      if (selectedFile.size > maxSize) {
+        setError(`Ukuran file tidak boleh melebihi 512 KB. Ukuran file Anda: ${(selectedFile.size / 1024).toFixed(2)} KB`);
+        setFile(null);
+        e.target.value = null; // Clear the file input
+        return;
+      }
+      setFile(selectedFile);
+      setError(''); // Clear any previous file errors
+    } else {
+      setFile(null);
+    }
   };
 
   const handleSubmit = async (e) => {
