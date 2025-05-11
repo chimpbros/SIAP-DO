@@ -95,17 +95,22 @@ const AdminDashboardPage = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['Nama', 'Pangkat', 'NRP', 'Email', 'Status Admin', 'Aksi'].map(h => <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>)}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pangkat</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">NRP</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status Admin</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {userList.length > 0 ? userList.map(user => (
                 <tr key={user.user_id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.pangkat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.nrp}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.pangkat}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.nrp}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.is_admin ? 'Admin' : 'User'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{user.is_admin ? 'Admin' : 'User'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     {isPendingTable && ( 
                       <>
@@ -124,7 +129,7 @@ const AdminDashboardPage = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada pengguna dalam kategori ini.</td></tr>
+                <tr><td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500 sm:colSpan-4 md:colSpan-6">Tidak ada pengguna dalam kategori ini.</td></tr>
               )}
             </tbody>
           </table>
