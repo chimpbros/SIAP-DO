@@ -147,6 +147,50 @@ exports.downloadDocument = async (req, res) => {
   }
 };
 
+exports.deleteDocument = async (req, res) => {
+  const { documentId } = req.params;
+  const userIsAdmin = req.user.isAdmin; // From authMiddleware
+
+  // Optional: Add check here if only admin can delete
+  if (!userIsAdmin) {
+     return res.status(403).json({ message: 'Anda tidak memiliki izin untuk menghapus dokumen.' });
+  }
+
+  try {
+    // Find the document first to get the storage path
+    const document = await Document.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ message: 'Dokumen tidak ditemukan.' });
+    }
+
+    // Delete the file from the filesystem
+    const filePath = path.resolve(document.storage_path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`Deleted file: ${filePath}`);
+    } else {
+      console.warn(`File not found for deletion: ${filePath}`);
+      // Continue with database deletion even if file is missing
+    }
+
+    // Delete the document record from the database
+    const deletedCount = await Document.deleteById(documentId);
+
+    if (deletedCount === 0) {
+       // This case should ideally not happen if findById found the document,
+       // but it's a safeguard.
+       return res.status(404).json({ message: 'Dokumen tidak ditemukan atau sudah dihapus.' });
+    }
+
+    res.status(200).json({ message: 'Dokumen berhasil dihapus.' });
+
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server saat menghapus dokumen.' });
+  }
+};
+
+
 // Placeholder for Excel export - to be implemented fully later
 exports.exportDocumentsToExcel = async (req, res) => {
   const { searchTerm, month, year } = req.query;

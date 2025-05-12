@@ -99,6 +99,16 @@ const DocumentService = {
       }
       throw { message: errorMessage };
     }
+  },
+
+  deleteDocument: async (documentId) => {
+    try {
+      const response = await api.delete(`/documents/${documentId}`);
+      return response.data; // Expected: { message: 'Dokumen berhasil dihapus.' }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw error.response?.data || { message: 'Failed to delete document due to network error.' };
+    }
   }
 };
 

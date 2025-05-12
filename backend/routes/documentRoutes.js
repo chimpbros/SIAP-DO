@@ -25,5 +25,8 @@ router.get('/:documentId/preview', protect, documentController.previewDocument);
 // GET /api/documents/:documentId/download - Download a specific document attachment
 router.get('/:documentId/download', protect, documentController.downloadDocument);
 
+// DELETE /api/documents/:documentId - Delete a specific document
+router.delete('/:documentId', protect, documentController.deleteDocument);
+
 
 module.exports = router;

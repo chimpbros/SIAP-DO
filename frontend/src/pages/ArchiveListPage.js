@@ -48,6 +48,23 @@ const ArchiveListPage = () => {
     }
   }, [user, currentPage, fetchDocuments]); // Added fetchDocuments to dependency array
 
+  const handleDelete = async (documentId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus dokumen ini?')) {
+      setLoading(true);
+      try {
+        await DocumentService.deleteDocument(documentId);
+        alert('Dokumen berhasil dihapus.');
+        // Refresh the document list after deletion
+        fetchDocuments(currentPage); 
+      } catch (error) {
+        console.error("Failed to delete document", error);
+        alert(error.message || "Gagal menghapus dokumen.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1); 

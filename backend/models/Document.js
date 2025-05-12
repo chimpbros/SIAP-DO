@@ -143,6 +143,17 @@ const Document = {
       console.error('Error finding documents for export:', error);
       throw error;
     }
+  },
+
+  async deleteById(documentId) {
+    const query = 'DELETE FROM documents WHERE document_id = $1 RETURNING document_id;';
+    try {
+      const { rowCount } = await db.query(query, [documentId]);
+      return rowCount; // Returns 1 if deleted, 0 if not found
+    } catch (error) {
+      console.error('Error deleting document by ID:', error);
+      throw error;
+    }
   }
 };
 
