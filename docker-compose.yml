@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: siap_db_compose
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: siapuser
+      POSTGRES_PASSWORD: thegrandinquisitor# # Replace with a strong password
+      POSTGRES_DB: siapdb
+    volumes:
+      - postgres_data_compose:/var/lib/postgresql/data
+      - ./backend/db_scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Mount init.sql
+    # Remove port mapping if not needed for direct external access after setup
+    # ports:
+    #   - "6543:5432" 
+    networks:
+      - siap_network_compose
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: siap_backend_compose
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_USER: siapuser
+      DB_PASSWORD: thegrandinquisitor# # Must match POSTGRES_PASSWORD above
+      DB_HOST: db # Service name 'db' from this docker-compose file
+      DB_PORT: 5432
+      DB_NAME: siapdb
+      JWT_SECRET: 3704a086ffefb5d6e7a6f4e144742d157e3bebeb5b9053328258936ac495f52b # Replace with a strong JWT secret
+      JWT_EXPIRES_IN: 1d
+    ports:
+      - "5000:5000" # Expose backend port
+    volumes:
+      - ./backend/uploads:/app/uploads # Persist uploads
+    networks:
+      - siap_network_compose
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://localhost:5000/api # Backend is on port 5000, /api prefix
+    container_name: siap_frontend_compose
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80" # Expose frontend Nginx port
+    networks:
+      - siap_network_compose
+
+volumes:
+  postgres_data_compose: # Use a different volume name to avoid conflict with Coolify's
+
+networks:
+  siap_network_compose: # Use a different network name
+    driver: bridge

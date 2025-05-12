@@ -31,23 +31,12 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email sudah terdaftar.' });
     }
 
-    let newUser = await User.create({ email, password, nama, pangkat, nrp });
-    
-    // TEMPORARY: Make the first user admin and approved
-    const allUsers = await User.getAll(); // Use getAll() method
-    if (allUsers && allUsers.length === 1) {
-      await User.setAdminStatus(newUser.user_id, true); // Use setAdminStatus() method
-      await User.approve(newUser.user_id); // Use approve() method
-      newUser.is_admin = true;
-      newUser.is_approved = true;
-    }
-    // END TEMPORARY
-
+    const newUser = await User.create({ email, password, nama, pangkat, nrp });
     // Exclude password_hash from the response
     const { password_hash, ...userWithoutPassword } = newUser; 
 
     res.status(201).json({
-      message: newUser.is_admin && newUser.is_approved ? 'Pendaftaran admin berhasil!' : 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.',
+      message: 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.',
       user: userWithoutPassword,
     });
   } catch (error) {
