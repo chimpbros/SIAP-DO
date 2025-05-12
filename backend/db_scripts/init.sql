@@ -1,3 +1,7 @@
+-- Enable pgcrypto extension if not already enabled (for gen_random_uuid() and crypt())
+-- This needs to be run first.
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -35,13 +39,21 @@ CREATE INDEX IF NOT EXISTS idx_documents_jenis_surat ON documents(jenis_surat);
 CREATE INDEX IF NOT EXISTS idx_documents_month_year ON documents(month_year);
 CREATE INDEX IF NOT EXISTS idx_documents_uploader_user_id ON documents(uploader_user_id);
 
--- Enable pgcrypto extension if not already enabled (for gen_random_uuid())
--- You might need superuser privileges to run this, or enable it manually in your DB.
--- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
--- Note: If gen_random_uuid() is not available and pgcrypto cannot be enabled via script,
--- consider using SERIAL or BIGSERIAL for IDs and managing UUIDs at the application level if strictly needed.
--- For DigitalOcean Managed Databases, pgcrypto is usually available.
+-- Insert the initial admin user
+-- Uses pgcrypto's crypt() function with gen_salt('bf', 8) for bcrypt hashing
+INSERT INTO users (email, password_hash, nama, pangkat, nrp, is_admin, is_approved)
+VALUES (
+    'admin@siap.com',
+    crypt('sdmressda', gen_salt('bf', 8)), -- Hash the password 'sdmressda' using bcrypt
+    'admin',
+    'admin_pangkat', -- Provide an appropriate value
+    'admin_nrp',     -- Provide an appropriate value
+    TRUE,            -- Set as admin
+    TRUE             -- Set as approved
+)
+ON CONFLICT (email) DO NOTHING; -- Avoid error if admin already exists
 
+-- Add comments to columns
 COMMENT ON COLUMN documents.tipe_surat IS 'e.g., ''Surat Masuk'', ''Surat Keluar''';
 COMMENT ON COLUMN documents.jenis_surat IS 'e.g., ''ST'', ''STR'', ''Biasa'', ''Sprin'', ''Nota Dinas''';
 COMMENT ON COLUMN documents.pengirim IS 'NULLABLE, only for ''Surat Masuk''';
