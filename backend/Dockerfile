@@ -6,15 +6,16 @@ FROM node:18-alpine AS base
 WORKDIR /app
 
 # Copy package.json and package-lock.json (or yarn.lock)
-COPY package*.json ./
+# Assuming Coolify's build context is the repository root.
+COPY backend/package*.json ./
 
 # Install app dependencies
 # Using npm install --omit=dev as an alternative if npm ci causes issues.
 # This will install dependencies based on package.json and use package-lock.json if available.
 RUN npm install --omit=dev
 
-# Copy the rest of the application code
-COPY . .
+# Copy the rest of the application code from the backend directory
+COPY backend/. .
 
 # Expose the port the app runs on.
 # Make sure your app in index.js listens on this port, preferably via process.env.PORT
