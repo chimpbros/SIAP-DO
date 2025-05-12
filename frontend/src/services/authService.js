@@ -2,14 +2,22 @@ import api from './api';
 
 const AuthService = {
   login: async (email, password) => {
+    console.log('AuthService.login called'); // Added log
     try {
+      console.log('Attempting API login post to /auth/login'); // Added log
       const response = await api.post('/auth/login', { email, password });
-      if (response.data.token) {
+      console.log('API login post response received:', response); // Added log
+
+      if (response.data && response.data.token) { // Added check for response.data
+        console.log('Token found in response, setting localStorage.'); // Added log
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+      } else {
+        console.log('No token found in response data:', response.data); // Added log
       }
       return response.data;
     } catch (error) {
+      console.error('Error inside AuthService.login catch block:', error); // Added log
       throw error.response?.data || { message: 'Login failed due to network error.' };
     }
   },
