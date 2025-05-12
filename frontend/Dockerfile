@@ -4,13 +4,14 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 # Copy package.json and package-lock.json (or yarn.lock)
-COPY package*.json ./
+# Assuming Coolify's build context is the repository root.
+COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy the rest of the frontend application code
-COPY . .
+# Copy the rest of the frontend application code from the frontend directory
+COPY frontend/. .
 
 # Set the API URL environment variable for the build process
 # Coolify will need to inject this ARG or ENV at build time if it's different from default
@@ -27,7 +28,8 @@ FROM nginx:1.25-alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Copy a custom Nginx configuration file (optional, but good for SPA routing)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Assuming Coolify's build context is the repository root.
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80 for Nginx
 EXPOSE 80
