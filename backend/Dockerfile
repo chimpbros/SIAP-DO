@@ -2,6 +2,9 @@
 # Using Node.js 18-alpine for a smaller image size
 FROM node:18-alpine AS base
 
+# Install curl for healthchecks
+RUN apk add --no-cache curl
+
 # Set the working directory in the container
 WORKDIR /app
 
