@@ -10,8 +10,8 @@ COPY package*.json ./
 
 # Install app dependencies
 # Using npm ci for cleaner installs if package-lock.json is present and up-to-date
-# Otherwise, npm install is fine
-RUN npm ci --only=production
+# Use --omit=dev for modern npm versions to exclude devDependencies
+RUN npm ci --omit=dev
 
 # Copy the rest of the application code
 COPY . .
