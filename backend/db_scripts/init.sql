@@ -39,20 +39,6 @@ CREATE INDEX IF NOT EXISTS idx_documents_jenis_surat ON documents(jenis_surat);
 CREATE INDEX IF NOT EXISTS idx_documents_month_year ON documents(month_year);
 CREATE INDEX IF NOT EXISTS idx_documents_uploader_user_id ON documents(uploader_user_id);
 
--- Insert the initial admin user
--- Uses pgcrypto's crypt() function with gen_salt('bf', 8) for bcrypt hashing
-INSERT INTO users (email, password_hash, nama, pangkat, nrp, is_admin, is_approved)
-VALUES (
-    'admin@siap.com',
-    crypt('sdmressda', gen_salt('bf', 8)), -- Hash the password 'sdmressda' using bcrypt
-    'admin',
-    'admin_pangkat', -- Provide an appropriate value
-    'admin_nrp',     -- Provide an appropriate value
-    TRUE,            -- Set as admin
-    TRUE             -- Set as approved
-)
-ON CONFLICT (email) DO NOTHING; -- Avoid error if admin already exists
-
 -- Add comments to columns
 COMMENT ON COLUMN documents.tipe_surat IS 'e.g., ''Surat Masuk'', ''Surat Keluar''';
 COMMENT ON COLUMN documents.jenis_surat IS 'e.g., ''ST'', ''STR'', ''Biasa'', ''Sprin'', ''Nota Dinas''';
