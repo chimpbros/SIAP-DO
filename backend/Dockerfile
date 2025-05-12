@@ -9,9 +9,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install app dependencies
-# Using npm ci for cleaner installs if package-lock.json is present and up-to-date
-# Use --omit=dev for modern npm versions to exclude devDependencies
-RUN npm ci --omit=dev
+# Using npm install --omit=dev as an alternative if npm ci causes issues.
+# This will install dependencies based on package.json and use package-lock.json if available.
+RUN npm install --omit=dev
 
 # Copy the rest of the application code
 COPY . .
