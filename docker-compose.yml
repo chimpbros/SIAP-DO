@@ -46,7 +46,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_BASE_URL: http://localhost:5000/api # Backend is on port 5000, /api prefix
+        REACT_APP_API_BASE_URL: http://18.138.169.43:5000/api # Use VPS public IP and backend port
     container_name: siap_frontend_compose
     restart: unless-stopped
     depends_on:
