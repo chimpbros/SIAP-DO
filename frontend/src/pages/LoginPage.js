@@ -23,10 +23,18 @@ const LoginPage = () => {
     console.log('Login attempt with:', { email, password });
     try {
       const data = await AuthService.login(email, password);
-      // AuthService.login already sets localStorage
-      console.log('Login successful:', data);
-      navigate('/dashboard');
+      console.log('AuthService.login response:', data); // Log the full response
+      
+      if (data && data.token) { // Explicitly check for token in response data
+        console.log('Login successful, navigating to dashboard.');
+        // AuthService.login already sets localStorage
+        navigate('/dashboard');
+      } else {
+        console.log('Login successful, but no token received. Response data:', data);
+        setError('Login successful, but no session token received.'); // Provide feedback if no token
+      }
     } catch (err) {
+      console.error('Login failed:', err); // Log the full error object
       setError(err.message || 'Login gagal. Silakan coba lagi.');
     }
   };
