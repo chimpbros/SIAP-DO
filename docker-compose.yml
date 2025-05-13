@@ -46,7 +46,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_BASE_URL: http://18.138.169.43:5000/api # Use VPS public IP and backend port
+        REACT_APP_API_BASE_URL: https://sisteminformasiadministrasipengarsipan-siap.com/api # Use HTTPS and your domain
     container_name: siap_frontend_compose
     restart: unless-stopped
     depends_on:
