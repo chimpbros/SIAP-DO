@@ -191,10 +191,18 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
                     <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
+                    {user?.is_admin && ( // Conditionally render delete button for admins
+                      <button 
+                        onClick={() => handleDelete(doc.document_id)} 
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500 sm:colSpan-7 md:colSpan-8">Tidak ada dokumen ditemukan.</td></tr>
+                <tr><td colSpan={user?.is_admin ? 9 : 8} className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
               )}
             </tbody>
           </table>
