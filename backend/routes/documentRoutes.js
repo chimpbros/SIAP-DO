@@ -1,15 +1,16 @@
 const express = require('express');
 const documentController = require('../controllers/documentController');
 const { protect } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware'); // Multer middleware
+const { uploadFields } = require('../middleware/uploadMiddleware'); // Multer middleware
 
 const router = express.Router();
 
 // POST /api/documents - Add a new document (requires file upload)
+// POST /api/documents - Add a new document (requires file upload, optional response file)
 router.post(
   '/',
   protect,
-  upload.single('lampiran_surat'), // 'lampiran_surat' is the field name in the form
+  uploadFields, // Use the new middleware for multiple fields
   documentController.addDocument
 );
 
@@ -27,6 +28,18 @@ router.get('/:documentId/download', protect, documentController.downloadDocument
 
 // DELETE /api/documents/:documentId - Delete a specific document
 router.delete('/:documentId', protect, documentController.deleteDocument);
+
+
+// GET /api/documents/unresponded - List unresponded Surat Masuk
+router.get('/unresponded', protect, documentController.listUnrespondedDocuments); // New route and controller function
+
+// PUT /api/documents/:documentId/respond - Add response to a Surat Masuk
+router.put(
+  '/:documentId/respond',
+  protect,
+  uploadFields, // Use the middleware to handle optional response file upload
+  documentController.addResponse // New controller function
+);
 
 
 module.exports = router;

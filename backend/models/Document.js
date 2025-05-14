@@ -1,14 +1,50 @@
 const db = require('../config/db');
 
 const Document = {
-  async create({ tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi, storage_path, original_filename, uploader_user_id, month_year }) {
+  async create({
+    tipe_surat,
+    jenis_surat,
+    nomor_surat,
+    perihal,
+    pengirim,
+    isi_disposisi,
+    storage_path, // Original document path
+    original_filename, // Original document filename
+    uploader_user_id,
+    month_year,
+    response_storage_path, // New: Response document path
+    response_original_filename, // New: Response document filename
+    response_upload_timestamp, // New: Response upload timestamp
+    response_keterangan, // New: Response description
+    has_responded // New: Has responded flag
+  }) {
     const query = `
-      INSERT INTO documents (tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi, storage_path, original_filename, uploader_user_id, month_year)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO documents (
+        tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi,
+        storage_path, original_filename, uploader_user_id, month_year,
+        response_storage_path, response_original_filename, response_upload_timestamp, response_keterangan, has_responded
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *;
     `;
-    const values = [tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi, storage_path, original_filename, uploader_user_id, month_year];
-    
+    const values = [
+      tipe_surat,
+      jenis_surat,
+      nomor_surat,
+      perihal,
+      pengirim,
+      isi_disposisi,
+      storage_path,
+      original_filename,
+      uploader_user_id,
+      month_year,
+      response_storage_path,
+      response_original_filename,
+      response_upload_timestamp,
+      response_keterangan,
+      has_responded
+    ];
+
     try {
       const { rows } = await db.query(query, values);
       return rows[0];
@@ -20,7 +56,7 @@ const Document = {
 
   async findById(documentId) {
     const query = `
-      SELECT d.*, u.nama as uploader_nama, u.nrp as uploader_nrp 
+      SELECT d.*, u.nama as uploader_nama, u.nrp as uploader_nrp
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
       WHERE d.document_id = $1;
@@ -36,8 +72,8 @@ const Document = {
 
   async findAll({ searchTerm, filterMonth, filterYear, userIsAdmin, limit, offset }) {
     let mainQuerySelect = `
-      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim, 
-             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp, 
+      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
+             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
              u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
@@ -68,7 +104,7 @@ const Document = {
     }
 
     const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
-    
+
     // Construct Count Query
     const countQueryString = `SELECT COUNT(*) FROM documents d JOIN users u ON d.uploader_user_id = u.user_id ${whereClause}`;
     const { rows: countRows } = await db.query(countQueryString, queryParams);
@@ -88,7 +124,7 @@ const Document = {
       mainQueryParams.push(offset);
       paramCount++;
     }
-    
+
     try {
       const { rows } = await db.query(mainQueryString, mainQueryParams);
       return { documents: rows, totalItems };
@@ -97,12 +133,12 @@ const Document = {
       throw error;
     }
   },
-  
+
   // For Excel export - potentially without pagination, or with specific filters
   async findAllForExport({ searchTerm, filterMonth, filterYear, userIsAdmin }) {
     let baseQuery = `
       SELECT d.nomor_surat, d.tipe_surat, d.jenis_surat, d.perihal, d.pengirim, d.isi_disposisi,
-             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as tanggal_upload, 
+             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as tanggal_upload,
              u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
@@ -141,6 +177,105 @@ const Document = {
       return rows;
     } catch (error) {
       console.error('Error finding documents for export:', error);
+      throw error;
+    }
+  },
+
+  // New method to find unresponded Surat Masuk documents
+  async findUnresponded({ searchTerm, filterMonth, filterYear, limit, offset }) {
+    let baseQuery = `
+      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
+             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path
+      FROM documents d
+      JOIN users u ON d.uploader_user_id = u.user_id
+    `;
+    const conditions = ["d.tipe_surat = 'Surat Masuk'", "d.has_responded = FALSE"];
+    const queryParams = []; // Parameters for the WHERE clause
+    let paramCount = 1;
+
+    if (searchTerm) {
+      conditions.push(`(d.nomor_surat ILIKE $${paramCount} OR d.perihal ILIKE $${paramCount} OR d.pengirim ILIKE $${paramCount})`);
+      queryParams.push(`%${searchTerm}%`);
+      paramCount++;
+    }
+
+    if (filterMonth && filterYear) {
+      const monthYear = `${filterYear}-${filterMonth.padStart(2, '0')}`;
+      conditions.push(`d.month_year = $${paramCount}`);
+      queryParams.push(monthYear);
+      paramCount++;
+    } else if (filterYear) {
+      conditions.push(`SUBSTRING(d.month_year, 1, 4) = $${paramCount}`);
+      queryParams.push(filterYear);
+      paramCount++;
+    }
+
+    const whereClause = ' WHERE ' + conditions.join(' AND ');
+
+    // Construct Count Query
+    const countQueryString = `SELECT COUNT(*) FROM documents d JOIN users u ON d.uploader_user_id = u.user_id ${whereClause}`;
+    const { rows: countRows } = await db.query(countQueryString, queryParams);
+    const totalItems = parseInt(countRows[0].count, 10);
+
+    // Construct Main Data Query
+    let mainQueryString = baseQuery + whereClause + ' ORDER BY d.upload_timestamp DESC';
+    const mainQueryParams = [...queryParams]; // Clone queryParams for the main query
+
+    if (limit) {
+      mainQueryString += ` LIMIT $${paramCount}`;
+      mainQueryParams.push(limit);
+      paramCount++;
+    }
+    if (offset) {
+      mainQueryString += ` OFFSET $${paramCount}`;
+      mainQueryParams.push(offset);
+      paramCount++;
+    }
+
+    try {
+      const { rows } = await db.query(mainQueryString, mainQueryParams);
+      return { documents: rows, totalItems };
+    } catch (error) {
+      console.error('Error finding unresponded documents:', error);
+      throw error;
+    }
+  },
+
+  // New method to update a document by ID
+  async updateById(documentId, updateData) {
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    // Build the SET clause and values array dynamically
+    for (const key in updateData) {
+      if (updateData.hasOwnProperty(key)) {
+        updates.push(`${key} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    }
+
+    if (updates.length === 0) {
+      // No fields to update
+      return null;
+    }
+
+    values.push(documentId); // Add documentId as the last parameter
+
+    const query = `
+      UPDATE documents
+      SET ${updates.join(', ')}
+      WHERE document_id = $${paramCount}
+      RETURNING *;
+    `;
+
+    try {
+      const { rows } = await db.query(query, values);
+      return rows[0]; // Return the updated document
+    } catch (error) {
+      console.error('Error updating document by ID:', error);
       throw error;
     }
   },
