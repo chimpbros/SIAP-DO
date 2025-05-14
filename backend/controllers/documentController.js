@@ -405,3 +405,58 @@ exports.addResponse = async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan pada server saat menambahkan respon.' });
   }
 };
+
+// New controller function to delete a response document
+exports.deleteResponse = async (req, res) => {
+  const { responseId } = req.params;
+  const userIsAdmin = req.user.isAdmin; // From authMiddleware
+
+  // Optional: Add check here if only admin can delete responses
+  if (!userIsAdmin) {
+     return res.status(403).json({ message: 'Anda tidak memiliki izin untuk menghapus respon dokumen.' });
+  }
+
+  try {
+    console.log(`Attempting to delete response with responseId: ${responseId}`);
+    // Find the document that has this response file path
+    // Assuming responseId in the URL is the filename part of the path
+    const document = await Document.findByResponseFilePathPartial(responseId); // Need to add this method to Document model
+
+    if (!document) {
+      console.warn(`Document not found for responseId: ${responseId}`);
+      return res.status(404).json({ message: 'Respon dokumen tidak ditemukan.' });
+    }
+
+    console.log(`Found document with response_storage_path: ${document.response_storage_path}`);
+
+    const responseFilePath = path.resolve(document.response_storage_path);
+
+    // Delete the file from the filesystem
+    if (fs.existsSync(responseFilePath)) {
+      fs.unlinkSync(responseFilePath);
+    } else {
+      console.warn(`Response file not found for deletion: ${responseFilePath}`);
+      // Continue with database update even if file is missing
+    }
+
+    // Update the document in the database to remove response details
+    const updateData = {
+        response_storage_path: null,
+        response_original_filename: null,
+        response_upload_timestamp: null,
+        // Only set has_responded to false if there's no keterangan either
+        has_responded: document.response_keterangan ? true : false,
+        response_keterangan: document.response_keterangan || null, // Keep keterangan if it exists
+    };
+
+    const updatedDocument = await Document.updateById(document._id, updateData); // Assuming _id is the document ID
+
+    res.status(200).json({ message: 'Respon dokumen berhasil dihapus.', document: updatedDocument });
+
+  } catch (error) {
+    console.error('Error deleting response document:', error);
+    // In development, send the actual error message for easier debugging
+    const errorMessage = process.env.NODE_ENV === 'development' ? error.message : 'Terjadi kesalahan pada server saat menghapus respon dokumen.';
+    res.status(500).json({ message: errorMessage });
+  }
+};

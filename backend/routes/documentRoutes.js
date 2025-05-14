@@ -41,5 +41,7 @@ router.put(
   documentController.addResponse // New controller function
 );
 
+// DELETE /api/documents/responses/:responseId - Delete a specific response document
+router.delete('/responses/:responseId', protect, documentController.deleteResponse);
 
 module.exports = router;

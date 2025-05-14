@@ -137,6 +137,17 @@ const DocumentService = {
       console.error('Error adding response:', error);
       throw error.response?.data || { message: 'Failed to add response due to network error.' };
     }
+  },
+
+  // New function to delete a response document
+  deleteResponse: async (responseId) => {
+    try {
+      const response = await api.delete(`/documents/responses/${responseId}`);
+      return response.data; // Expected: { message: 'Respon dokumen berhasil dihapus.' }
+    } catch (error) {
+      console.error('Error deleting response document:', error);
+      throw error.response?.data || { message: 'Failed to delete response document due to network error.' };
+    }
   }
 };
 

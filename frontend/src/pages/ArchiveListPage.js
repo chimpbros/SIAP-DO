@@ -60,10 +60,31 @@ const ArchiveListPage = () => {
         await DocumentService.deleteDocument(documentId);
         alert('Dokumen berhasil dihapus.');
         // Refresh the document list after deletion
-        fetchDocuments(currentPage); 
+        fetchDocuments(currentPage);
       } catch (error) {
         console.error("Failed to delete document", error);
         alert(error.message || "Gagal menghapus dokumen.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleDeleteResponse = async (doc) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus dokumen respon ini?')) {
+      setLoading(true);
+      try {
+        // Extract filename from the path
+        const responsePath = doc.response_storage_path;
+        const responseId = responsePath.split(/[\\/]/).pop(); // Get the last part of the path (filename)
+
+        await DocumentService.deleteResponse(responseId);
+        alert('Dokumen respon berhasil dihapus.');
+        // Refresh the document list after deletion
+        fetchDocuments(currentPage);
+      } catch (error) {
+        console.error("Failed to delete response document", error);
+        alert(error.message || "Gagal menghapus dokumen respon.");
       } finally {
         setLoading(false);
       }
@@ -227,7 +248,17 @@ const ArchiveListPage = () => {
                     {doc.has_responded ? (
                       // If has_responded is true, check if there's a response document path to preview
                       doc.response_storage_path ? (
-                        <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
+                        <span className="space-x-2"> {/* Use a span to group buttons */}
+                          <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
+                          {user?.is_admin && ( // Conditionally render delete response button for admins
+                            <button
+                              onClick={() => handleDeleteResponse(doc)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </span>
                       ) : (
                         // If has_responded is true but no response_storage_path, it means only keterangan was provided or archived without response
                         <span>Respon Ditambahkan</span> // Indicate response added without document
@@ -242,7 +273,7 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
                     <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
-                    {user?.is_admin && ( // Conditionally render delete button for admins
+                    {user?.is_admin && ( // Conditionally render delete document button for admins
                       <button
                         onClick={() => handleDelete(doc.document_id)}
                         className="text-red-600 hover:text-red-900"

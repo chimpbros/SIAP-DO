@@ -290,6 +290,24 @@ const Document = {
       console.error('Error deleting document by ID:', error);
       throw error;
     }
+  },
+
+  async findByResponseFilePathPartial(partialPath) {
+    const query = `
+      SELECT d.*, u.nama as uploader_nama, u.nrp as uploader_nrp
+      FROM documents d
+      JOIN users u ON d.uploader_user_id = u.user_id
+      WHERE d.response_storage_path LIKE $1;
+    `;
+    // Use a wildcard at the beginning to match any path ending with partialPath
+    const value = `%${partialPath}`;
+    try {
+      const { rows } = await db.query(query, [value]);
+      return rows[0]; // Return the first matching document
+    } catch (error) {
+      console.error('Error finding document by response file path partial:', error);
+      throw error;
+    }
   }
 };
 
