@@ -74,7 +74,8 @@ const Document = {
     let mainQuerySelect = `
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
-             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path
+             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
+             d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
     `;
