@@ -11,14 +11,34 @@ const AddDocumentPage = () => {
     perihal: '',
     pengirim: '',
     isi_disposisi: '',
+    response_document: null,
+    response_keterangan: '',
   });
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [archiveWithoutResponse, setArchiveWithoutResponse] = useState(false);
   // const navigate = useNavigate(); // Removed
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleResponseFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      const maxSize = 512 * 1024; // 512 KB
+      if (selectedFile.size > maxSize) {
+        setError(`Ukuran file tidak boleh melebihi 512 KB. Ukuran file Anda: ${(selectedFile.size / 1024).toFixed(2)} KB`);
+        setFormData({ ...formData, response_document: null });
+        e.target.value = null;
+        return;
+      }
+      setFormData({ ...formData, response_document: selectedFile });
+      setError('');
+    } else {
+      setFormData({ ...formData, response_document: null });
+    }
   };
 
   const handleFileChange = (e) => {
@@ -43,6 +63,15 @@ const AddDocumentPage = () => {
     setError('');
     setSuccess('');
 
+    // Reset response fields if archiveWithoutResponse is true
+    if (archiveWithoutResponse) {
+      setFormData({ 
+        ...formData, 
+        response_document: null,
+        response_keterangan: ''
+      });
+    }
+
     if (!file) {
       setError('Lampiran surat wajib diisi.');
       return;
@@ -51,20 +80,27 @@ const AddDocumentPage = () => {
       setError('Tipe Surat, Jenis Surat, Nomor Surat, dan Perihal wajib diisi.');
       return;
     }
-    if (formData.tipe_surat === 'Surat Masuk' && (!formData.pengirim || !formData.isi_disposisi)) {
+    if (formData.tipe_surat === 'Surat Masuk' && (!archiveWithoutResponse) && (!formData.pengirim || !formData.isi_disposisi)) {
       setError('Untuk Surat Masuk, Pengirim dan Isi Disposisi wajib diisi.');
+      return;
+    }
+    if (formData.tipe_surat === 'Surat Masuk' && (!archiveWithoutResponse) && (!formData.response_document || !formData.response_keterangan)) {
+      setError('Untuk Surat Masuk yang memerlukan respons, Lampiran Respons dan Keterangan Respons wajib diisi.');
       return;
     }
 
     const data = new FormData();
-    data.append('lampiran_surat', file);
+    data.append('originalDocument', file);
     data.append('tipe_surat', formData.tipe_surat);
     data.append('jenis_surat', formData.jenis_surat);
     data.append('nomor_surat', formData.nomor_surat);
     data.append('perihal', formData.perihal);
-    if (formData.tipe_surat === 'Surat Masuk') {
+    if (formData.tipe_surat === 'Surat Masuk' && !archiveWithoutResponse) {
       data.append('pengirim', formData.pengirim);
       data.append('isi_disposisi', formData.isi_disposisi);
+      data.append('responseDocument', formData.response_document);
+      data.append('response_keterangan', formData.response_keterangan);
+      data.append('archive_without_response', archiveWithoutResponse);
     }
     
     console.log('Add document attempt with:', Object.fromEntries(data.entries()));
@@ -136,6 +172,44 @@ const AddDocumentPage = () => {
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="isi_disposisi">Isi Disposisi</label>
                 <textarea id="isi_disposisi" value={formData.isi_disposisi} onChange={handleChange} className="input-field h-20" placeholder="Isi Disposisi"></textarea>
               </div>
+              
+              <div className="mt-4 flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="archiveWithoutResponse" 
+                  checked={archiveWithoutResponse}
+                  onChange={(e) => setArchiveWithoutResponse(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="archiveWithoutResponse" className="ml-2 block text-sm text-gray-700">
+                  Arsipkan tanpa respons
+                </label>
+              </div>
+
+              {!archiveWithoutResponse && (
+                <>
+                  <div className="mt-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="response_document">Lampiran Respons (PDF, JPG, PNG)</label>
+                    <input 
+                      type="file" 
+                      id="response_document" 
+                      onChange={handleResponseFileChange}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="response_keterangan">Keterangan Respons</label>
+                    <textarea 
+                      id="response_keterangan" 
+                      value={formData.response_keterangan} 
+                      onChange={handleChange} 
+                      className="input-field h-20" 
+                      placeholder="Keterangan untuk respons surat"
+                    ></textarea>
+                  </div>
+                </>
+              )}
             </>
           )}
 

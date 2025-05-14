@@ -109,6 +109,34 @@ const DocumentService = {
       console.error('Error deleting document:', error);
       throw error.response?.data || { message: 'Failed to delete document due to network error.' };
     }
+  },
+
+  // New function to list unresponded Surat Masuk documents
+  listUnrespondedDocuments: async (params) => {
+    // params: { searchTerm, month, year, page, limit }
+    try {
+      const response = await api.get('/documents/unresponded', { params });
+      return response.data; // Expected: { documents, currentPage, totalPages, totalItems }
+    } catch (error) {
+      console.error('Error fetching unresponded documents:', error);
+      throw error.response?.data || { message: 'Failed to fetch unresponded documents due to network error.' };
+    }
+  },
+
+  // New function to add response to a Surat Masuk document
+  addResponse: async (documentId, formData) => {
+    // formData is expected to be a FormData object containing responseDocument and response_keterangan
+    try {
+      const response = await api.put(`/documents/${documentId}/respond`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // Expected: { message, document }
+    } catch (error) {
+      console.error('Error adding response:', error);
+      throw error.response?.data || { message: 'Failed to add response due to network error.' };
+    }
   }
 };
 
