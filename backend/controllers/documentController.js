@@ -107,6 +107,7 @@ exports.addDocument = async (req, res) => {
       response_keterangan: response_keterangan || null, // Save keterangan
       has_responded, // Save the determined status
     });
+    console.log('New document after addDocument:', newDocument); // Added logging
     res.status(201).json({ message: 'Dokumen berhasil ditambahkan.', document: newDocument });
   } catch (error) {
     console.error('Error adding document:', error);
@@ -393,6 +394,7 @@ exports.addResponse = async (req, res) => {
 
     // Update the document in the database
     const updatedDocument = await Document.updateById(documentId, updateData);
+    console.log('Updated document after addResponse:', updatedDocument); // Added logging
 
     res.status(200).json({ message: 'Respon berhasil ditambahkan.', document: updatedDocument });
 

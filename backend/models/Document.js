@@ -75,7 +75,7 @@ const Document = {
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
              u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
-             d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan
+             d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan, d.has_responded
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
     `;
@@ -128,6 +128,7 @@ const Document = {
 
     try {
       const { rows } = await db.query(mainQueryString, mainQueryParams);
+      console.log('Documents fetched by findAll:', rows); // Added logging
       return { documents: rows, totalItems };
     } catch (error) {
       console.error('Error finding all documents:', error);
@@ -274,6 +275,7 @@ const Document = {
 
     try {
       const { rows } = await db.query(query, values);
+      console.log('Result of updateById query:', rows[0]); // Added logging
       return rows[0]; // Return the updated document
     } catch (error) {
       console.error('Error updating document by ID:', error);

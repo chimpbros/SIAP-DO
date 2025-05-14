@@ -63,14 +63,10 @@ const AddDocumentPage = () => {
     setError('');
     setSuccess('');
 
-    // Reset response fields if archiveWithoutResponse is true
-    if (archiveWithoutResponse) {
-      setFormData({ 
-        ...formData, 
-        response_document: null,
-        response_keterangan: ''
-      });
-    }
+    // Do NOT reset response fields if archiveWithoutResponse is true.
+    // The backend logic in addDocument will handle the has_responded flag correctly
+    // based on whether responseDocument or response_keterangan are provided,
+    // regardless of the archiveWithoutResponse flag.
 
     if (!file) {
       setError('Lampiran surat wajib diisi.');

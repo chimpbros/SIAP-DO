@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import DocumentService from '../services/documentService';
 import AuthService from '../services/authService'; // To get current user for admin check
+import AddResponseModal from '../components/AddResponseModal'; // Import the new modal component
 
 const ArchiveListPage = () => {
   const navigate = useNavigate(); // Initialize useNavigate
@@ -14,6 +15,8 @@ const ArchiveListPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
+  const [showAddResponseModal, setShowAddResponseModal] = useState(false); // State for modal visibility
+  const [selectedDocument, setSelectedDocument] = useState(null); // State to hold the document for the modal
 
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
@@ -115,8 +118,19 @@ const ArchiveListPage = () => {
   };
 
   const handleAddResponse = (doc) => {
-    // Navigate to AddDocumentPage, passing original document info
-    navigate('/add-document', { state: { originalDocument: doc } });
+    setSelectedDocument(doc); // Set the document for the modal
+    setShowAddResponseModal(true); // Show the modal
+  };
+
+  const handleCloseAddResponseModal = () => {
+    setShowAddResponseModal(false); // Hide the modal
+    setSelectedDocument(null); // Clear the selected document
+  };
+
+  const handleResponseAdded = () => {
+    // This function is called from the modal after a successful response addition
+    // Refresh the document list
+    fetchDocuments(currentPage);
   };
   
   const handleExcelDownload = async () => { // Make function async
@@ -208,9 +222,16 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {doc.response_document_id ? (
-                      <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
+                    {doc.has_responded ? (
+                      // If has_responded is true, check if there's a response document path to preview
+                      doc.response_storage_path ? (
+                        <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
+                      ) : (
+                        // If has_responded is true but no response_storage_path, it means only keterangan was provided or archived without response
+                        <span>Respon Ditambahkan</span> // Indicate response added without document
+                      )
                     ) : (
+                      // If has_responded is false, and it's a Surat Masuk, show "Tambah Respon"
                       doc.tipe_surat === 'Surat Masuk' && (
                         <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
                       )
@@ -250,6 +271,15 @@ const ArchiveListPage = () => {
           </div>
       )}
       {/* .input-field styles are now global in index.css */}
+
+      {/* Add the modal component */}
+      {showAddResponseModal && (
+        <AddResponseModal
+          document={selectedDocument}
+          onClose={handleCloseAddResponseModal}
+          onResponseAdded={handleResponseAdded}
+        />
+      )}
     </>
   );
 };
