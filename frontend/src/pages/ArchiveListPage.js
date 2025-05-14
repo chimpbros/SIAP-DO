@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // Navbar is now in MainLayout
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import DocumentService from '../services/documentService';
 import AuthService from '../services/authService'; // To get current user for admin check
 
 const ArchiveListPage = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [documents, setDocuments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
@@ -67,8 +69,8 @@ const ArchiveListPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); 
-    fetchDocuments(1); 
+    setCurrentPage(1);
+    fetchDocuments(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -82,6 +84,17 @@ const ArchiveListPage = () => {
       window.open(fileURL, '_blank');
     } catch (error) {
       alert(error.message || 'Gagal memuat pratinjau dokumen.');
+    }
+  };
+
+  const handlePreviewResponse = async (doc) => {
+    try {
+      // Assuming the backend has an endpoint to get the response document by its ID
+      const blob = await DocumentService.getDocumentAsBlob(doc.response_document_id, 'preview');
+      const fileURL = URL.createObjectURL(blob);
+      window.open(fileURL, '_blank');
+    } catch (error) {
+      alert(error.message || 'Gagal memuat pratinjau dokumen respon.');
     }
   };
 
@@ -99,6 +112,11 @@ const ArchiveListPage = () => {
     } catch (error) {
       alert(error.message || 'Gagal mengunduh dokumen.');
     }
+  };
+
+  const handleAddResponse = (doc) => {
+    // Navigate to AddDocumentPage, passing original document info
+    navigate('/add-document', { state: { originalDocument: doc } });
   };
   
   const handleExcelDownload = async () => { // Make function async
@@ -175,6 +193,7 @@ const ArchiveListPage = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pengirim</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tgl Upload</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Uploader</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokumen Respon</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
@@ -188,12 +207,21 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {doc.response_document_id ? (
+                      <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
+                    ) : (
+                      doc.tipe_surat === 'Surat Masuk' && (
+                        <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
+                      )
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
                     <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
                     {user?.is_admin && ( // Conditionally render delete button for admins
-                      <button 
-                        onClick={() => handleDelete(doc.document_id)} 
+                      <button
+                        onClick={() => handleDelete(doc.document_id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete
@@ -202,7 +230,7 @@ const ArchiveListPage = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={user?.is_admin ? 9 : 8} className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
+                <tr><td colSpan={user?.is_admin ? 10 : 9} className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
               )}
             </tbody>
           </table>
