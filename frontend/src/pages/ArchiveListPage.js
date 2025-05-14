@@ -35,6 +35,7 @@ const ArchiveListPage = () => {
         year: filterYear || undefined 
       };
       const data = await DocumentService.listDocuments(params);
+      console.log("Fetched documents data:", JSON.stringify(data.documents, null, 2)); // Log the fetched data with pretty printing
       setDocuments(data.documents);
       setCurrentPage(data.currentPage); // Ensure currentPage is updated from response
       setTotalPages(data.totalPages);
@@ -80,8 +81,28 @@ const ArchiveListPage = () => {
 
         await DocumentService.deleteResponse(responseId);
         alert('Dokumen respon berhasil dihapus.');
-        // Refresh the document list after deletion
-        fetchDocuments(currentPage);
+
+        // Manually update the state to reflect the deletion immediately
+        setDocuments(prevDocuments =>
+          prevDocuments.map(document => {
+            if (document.document_id === doc.document_id) {
+              return {
+                ...document,
+                response_storage_path: null,
+                response_original_filename: null,
+                response_upload_timestamp: null,
+                response_keterangan: null, // Also clear keterangan
+                has_responded: false, // Set has_responded to false
+              };
+            }
+            return document;
+          })
+        );
+
+        // No need to refetch or reset page after manual state update
+        // fetchDocuments(currentPage);
+        // setCurrentPage(1);
+
       } catch (error) {
         console.error("Failed to delete response document", error);
         alert(error.message || "Gagal menghapus dokumen respon.");
@@ -245,28 +266,26 @@ const ArchiveListPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {doc.has_responded ? (
-                      // If has_responded is true, check if there's a response document path to preview
+                    {/* Show "Tambah Respon" if it's Surat Masuk and no response document */}
+                    {doc.tipe_surat === 'Surat Masuk' && !doc.response_storage_path ? (
+                       <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
+                    ) : (
+                      // If there is a response document, show preview and delete options
                       doc.response_storage_path ? (
                         <span className="space-x-2"> {/* Use a span to group buttons */}
-                          <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
+                          <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
                           {user?.is_admin && ( // Conditionally render delete response button for admins
                             <button
                               onClick={() => handleDeleteResponse(doc)}
                               className="text-red-600 hover:text-red-900"
                             >
-                              Delete
+                              Delete Respon
                             </button>
                           )}
                         </span>
                       ) : (
-                        // If has_responded is true but no response_storage_path, it means only keterangan was provided or archived without response
-                        <span>Respon Ditambahkan</span> // Indicate response added without document
-                      )
-                    ) : (
-                      // If has_responded is false, and it's a Surat Masuk, show "Tambah Respon"
-                      doc.tipe_surat === 'Surat Masuk' && (
-                        <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
+                        // If no response document but has_responded is true (due to keterangan), indicate response added
+                         doc.has_responded && doc.response_keterangan && <span>Respon Ditambahkan</span> // Only show if keterangan exists
                       )
                     )}
                   </td>

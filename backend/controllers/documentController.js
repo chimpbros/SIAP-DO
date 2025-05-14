@@ -53,7 +53,8 @@ exports.addDocument = async (req, res) => {
   }
   // --- End Validation ---
 
-  const original_storage_path = originalDocument.path; // Path provided by multer
+  // Store paths relative to the expected mount point inside the Docker container
+  const original_storage_path = `/app/uploads/${path.basename(originalDocument.path)}`;
   const original_filename = originalDocument.originalname;
   const month_year = getCurrentMonthYear();
 
@@ -66,7 +67,8 @@ exports.addDocument = async (req, res) => {
   // Check if a response is provided or if archiving without response is requested
   if (tipe_surat === 'Surat Masuk') {
       if (responseDocument) {
-          response_storage_path = responseDocument.path;
+          // Store paths relative to the expected mount point inside the Docker container
+          response_storage_path = `/app/uploads/${path.basename(responseDocument.path)}`;
           response_original_filename = responseDocument.originalname;
           response_upload_timestamp = new Date(); // Set timestamp if response document is uploaded
           has_responded = true;
@@ -160,8 +162,8 @@ exports.previewDocument = async (req, res) => {
 
     // Determine which file path to use for preview (original or response)
     const filePathToPreview = document.response_storage_path
-      ? path.resolve(document.response_storage_path) // Use response path if available
-      : path.resolve(document.storage_path); // Otherwise, use original path
+      ? path.join('/app/uploads', path.basename(document.response_storage_path)) // Use response path if available
+      : path.join('/app/uploads', path.basename(document.storage_path)); // Otherwise, use original path
 
     if (fs.existsSync(filePathToPreview)) {
       res.sendFile(filePathToPreview);
@@ -188,7 +190,7 @@ exports.downloadDocument = async (req, res) => {
       return res.status(403).json({ message: 'Anda tidak memiliki izin untuk mengunduh dokumen STR.' });
     }
 
-    const filePath = path.resolve(document.storage_path);
+    const filePath = path.join('/app/uploads', path.basename(document.storage_path));
     if (fs.existsSync(filePath)) {
       res.download(filePath, document.original_filename, (err) => {
         if (err) {
@@ -377,7 +379,8 @@ exports.addResponse = async (req, res) => {
 
     // Add response document details if uploaded
     if (responseDocument) {
-        updateData.response_storage_path = responseDocument.path;
+        // Store paths relative to the expected mount point inside the Docker container
+        updateData.response_storage_path = `/app/uploads/${path.basename(responseDocument.path)}`;
         updateData.response_original_filename = responseDocument.originalname;
         updateData.response_upload_timestamp = new Date();
     } else if (!response_keterangan || response_keterangan.trim() === '') {
@@ -429,7 +432,8 @@ exports.deleteResponse = async (req, res) => {
 
     console.log(`Found document with response_storage_path: ${document.response_storage_path}`);
 
-    const responseFilePath = path.resolve(document.response_storage_path);
+    // Construct the file path relative to the expected mount point inside the Docker container
+    const responseFilePath = path.join('/app/uploads', path.basename(document.response_storage_path));
 
     // Delete the file from the filesystem
     if (fs.existsSync(responseFilePath)) {
@@ -444,12 +448,15 @@ exports.deleteResponse = async (req, res) => {
         response_storage_path: null,
         response_original_filename: null,
         response_upload_timestamp: null,
-        // Only set has_responded to false if there's no keterangan either
-        has_responded: document.response_keterangan ? true : false,
+        // Set has_responded to false when the response document is deleted
+        has_responded: false,
         response_keterangan: document.response_keterangan || null, // Keep keterangan if it exists
     };
 
-    const updatedDocument = await Document.updateById(document._id, updateData); // Assuming _id is the document ID
+    console.log('Attempting to update document with data:', updateData);
+    // Use document.document_id as the primary key is likely named document_id in the database
+    const updatedDocument = await Document.updateById(document.document_id, updateData);
+    console.log('Document update result:', updatedDocument);
 
     res.status(200).json({ message: 'Respon dokumen berhasil dihapus.', document: updatedDocument });
 

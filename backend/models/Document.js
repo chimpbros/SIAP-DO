@@ -272,8 +272,12 @@ const Document = {
       RETURNING *;
     `;
 
+    console.log('Executing UPDATE query:', query);
+    console.log('UPDATE query values:', values);
+
     try {
       const { rows } = await db.query(query, values);
+      console.log('UPDATE query result rows:', rows);
       return rows[0]; // Return the updated document
     } catch (error) {
       console.error('Error updating document by ID:', error);
