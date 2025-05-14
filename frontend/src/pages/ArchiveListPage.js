@@ -92,11 +92,13 @@ const ArchiveListPage = () => {
 
   const handlePreviewResponse = async (doc) => {
     try {
-      // Assuming the backend has an endpoint to get the response document by its ID
-      const blob = await DocumentService.getDocumentAsBlob(doc.response_document_id, 'preview');
+      // Use the original document's ID to preview the response document
+      // The backend's preview endpoint is updated to serve the response file if available
+      const blob = await DocumentService.getDocumentAsBlob(doc.document_id, 'preview');
       const fileURL = URL.createObjectURL(blob);
       window.open(fileURL, '_blank');
     } catch (error) {
+      console.error("Failed to preview response document", error); // Log the actual error
       alert(error.message || 'Gagal memuat pratinjau dokumen respon.');
     }
   };

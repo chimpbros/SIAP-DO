@@ -159,10 +159,13 @@ exports.previewDocument = async (req, res) => {
       return res.status(403).json({ message: 'Anda tidak memiliki izin untuk melihat dokumen STR.' });
     }
 
-    const filePath = path.resolve(document.storage_path);
+    // Determine which file path to use for preview (original or response)
+    const filePathToPreview = document.response_storage_path
+      ? path.resolve(document.response_storage_path) // Use response path if available
+      : path.resolve(document.storage_path); // Otherwise, use original path
 
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
+    if (fs.existsSync(filePathToPreview)) {
+      res.sendFile(filePathToPreview);
     } else {
       res.status(404).json({ message: 'File lampiran tidak ditemukan di server.' });
     }
