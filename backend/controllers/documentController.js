@@ -45,7 +45,7 @@ exports.addDocument = async (req, res) => {
     return res.status(400).json({ message: 'Field Tipe Surat, Jenis Surat, Nomor Surat, dan Perihal wajib diisi.' });
   }
 
-  if (tipe_surat === 'Surat Masuk' && !archive_without_response && (!pengirim || !isi_disposisi)) {
+  if (tipe_surat === 'Surat Masuk' && req.body.archive_without_response === undefined && (!pengirim || !isi_disposisi)) {
     // Clean up uploaded files
     if (originalDocument) fs.unlinkSync(originalDocument.path);
     if (responseDocument) fs.unlinkSync(responseDocument.path);

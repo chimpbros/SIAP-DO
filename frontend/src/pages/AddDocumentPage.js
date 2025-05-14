@@ -95,12 +95,15 @@ const AddDocumentPage = () => {
     data.append('jenis_surat', formData.jenis_surat);
     data.append('nomor_surat', formData.nomor_surat);
     data.append('perihal', formData.perihal);
-    if (formData.tipe_surat === 'Surat Masuk' && !archiveWithoutResponse) {
+    if (formData.tipe_surat === 'Surat Masuk') { // Modified condition
       data.append('pengirim', formData.pengirim);
       data.append('isi_disposisi', formData.isi_disposisi);
-      data.append('responseDocument', formData.response_document);
-      data.append('response_keterangan', formData.response_keterangan);
-      data.append('archive_without_response', archiveWithoutResponse);
+      // Only append responseDocument and response_keterangan if not archiving without response
+      if (!archiveWithoutResponse) {
+        data.append('responseDocument', formData.response_document);
+        data.append('response_keterangan', formData.response_keterangan);
+      }
+      data.append('archive_without_response', archiveWithoutResponse); // Always append for Surat Masuk
     }
     
     console.log('Add document attempt with:', Object.fromEntries(data.entries()));
