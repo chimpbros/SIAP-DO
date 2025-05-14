@@ -128,7 +128,6 @@ const Document = {
 
     try {
       const { rows } = await db.query(mainQueryString, mainQueryParams);
-      console.log('Documents fetched by findAll:', rows); // Added logging
       return { documents: rows, totalItems };
     } catch (error) {
       console.error('Error finding all documents:', error);
@@ -239,7 +238,7 @@ const Document = {
       const { rows } = await db.query(mainQueryString, mainQueryParams);
       return { documents: rows, totalItems };
     } catch (error) {
-      console.error('Error finding unresponded documents:', error);
+      console.error('Error finding all documents:', error);
       throw error;
     }
   },
@@ -275,7 +274,6 @@ const Document = {
 
     try {
       const { rows } = await db.query(query, values);
-      console.log('Result of updateById query:', rows[0]); // Added logging
       return rows[0]; // Return the updated document
     } catch (error) {
       console.error('Error updating document by ID:', error);

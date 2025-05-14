@@ -107,7 +107,6 @@ exports.addDocument = async (req, res) => {
       response_keterangan: response_keterangan || null, // Save keterangan
       has_responded, // Save the determined status
     });
-    console.log('New document after addDocument:', newDocument); // Added logging
     res.status(201).json({ message: 'Dokumen berhasil ditambahkan.', document: newDocument });
   } catch (error) {
     console.error('Error adding document:', error);
@@ -231,7 +230,6 @@ exports.deleteDocument = async (req, res) => {
     const filePath = path.resolve(document.storage_path);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`Deleted file: ${filePath}`);
     } else {
       console.warn(`File not found for deletion: ${filePath}`);
       // Continue with database deletion even if file is missing
@@ -397,7 +395,6 @@ exports.addResponse = async (req, res) => {
 
     // Update the document in the database
     const updatedDocument = await Document.updateById(documentId, updateData);
-    console.log('Updated document after addResponse:', updatedDocument); // Added logging
 
     res.status(200).json({ message: 'Respon berhasil ditambahkan.', document: updatedDocument });
 
