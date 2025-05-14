@@ -11,9 +11,9 @@ const AddResponseModal = ({ document, onClose, onResponseAdded }) => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      const maxSize = 512 * 1024; // 512 KB
+      const maxSize = 1024 * 1024 * 2; // 2 MB
       if (selectedFile.size > maxSize) {
-        setError(`Ukuran file tidak boleh melebihi 512 KB. Ukuran file Anda: ${(selectedFile.size / 1024).toFixed(2)} KB`);
+        setError(`Ukuran file tidak boleh melebihi 2 MB. Ukuran file Anda: ${(selectedFile.size / 1024).toFixed(2)} KB`);
         setResponseFile(null);
         e.target.value = null;
         return;
