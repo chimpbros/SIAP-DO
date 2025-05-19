@@ -122,3 +122,6 @@ dist/
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# Uploaded files
+backend/uploads/
