@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import DocumentService from '../services/documentService';
 import AuthService from '../services/authService'; // To get current user for admin check
-import AddResponseModal from '../components/AddResponseModal'; // Import the new modal component
+import DispositionFollowUpModal from '../components/DispositionFollowUpModal'; // Import the new modal
 
 const ArchiveListPage = () => {
   const navigate = useNavigate(); // Initialize useNavigate
@@ -15,8 +15,12 @@ const ArchiveListPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [showAddResponseModal, setShowAddResponseModal] = useState(false); // State for modal visibility
-  const [selectedDocument, setSelectedDocument] = useState(null); // State to hold the document for the modal
+  // const [showAddResponseModal, setShowAddResponseModal] = useState(false); // Old modal state
+  // const [selectedDocument, setSelectedDocument] = useState(null); // Old selected doc state
+
+  const [showDispositionModal, setShowDispositionModal] = useState(false);
+  const [selectedDocumentForDisposition, setSelectedDocumentForDisposition] = useState(null);
+
 
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
@@ -161,20 +165,19 @@ const ArchiveListPage = () => {
     }
   };
 
-  const handleAddResponse = (doc) => {
-    setSelectedDocument(doc); // Set the document for the modal
-    setShowAddResponseModal(true); // Show the modal
+  const openDispositionModal = (doc) => {
+    setSelectedDocumentForDisposition(doc);
+    setShowDispositionModal(true);
   };
 
-  const handleCloseAddResponseModal = () => {
-    setShowAddResponseModal(false); // Hide the modal
-    setSelectedDocument(null); // Clear the selected document
+  const closeDispositionModal = () => {
+    setSelectedDocumentForDisposition(null);
+    setShowDispositionModal(false);
   };
 
-  const handleResponseAdded = () => {
-    // This function is called from the modal after a successful response addition
-    // Refresh the document list
-    fetchDocuments(currentPage);
+  const handleDispositionActionComplete = () => {
+    fetchDocuments(currentPage); // Refresh data after modal action
+    closeDispositionModal();
   };
   
   const handleExcelDownload = async () => { // Make function async
@@ -207,129 +210,139 @@ const ArchiveListPage = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Daftar Arsip Dokumen</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Arsip Surat</h1>
+          <p className="text-sm text-text-secondary">Lihat dan atur seluruh surat, tambahkan disposisi atau tindak lanjut.</p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => {/* Logic for search focus or modal */}}
+            className="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg flex items-center"
+          >
+            <img src={process.env.PUBLIC_URL + '/search.svg'} alt="Search" className="w-5 h-5 mr-2" />
+            Search
+          </button>
+          {user?.is_admin && (
+            <button
+              onClick={handleExcelDownload}
+              className="bg-content-bg hover:bg-gray-100 text-text-primary border border-border-color font-medium py-2 px-4 rounded-lg flex items-center"
+            >
+               <img src={process.env.PUBLIC_URL + '/file-export.svg'} alt="Export" className="w-5 h-5 mr-2" />
+              Export
+            </button>
+          )}
+        </div>
+      </div>
       
-      <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow-md mb-6">
+      {/* Filters section - can be refined later, for now keeping existing logic with new styling */}
+      <form onSubmit={handleSearch} className="bg-content-bg p-4 rounded-xl shadow-lg mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <label htmlFor="searchTerm" className="block text-sm font-medium text-gray-700">Cari Dokumen</label>
-            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="mt-1 input-field" placeholder="Nomor, Perihal, Pengirim..." />
+            <label htmlFor="searchTerm" className="block text-sm font-medium text-text-secondary mb-1">Cari Dokumen</label>
+            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field" placeholder="Nomor, Perihal, Pengirim..." />
           </div>
           <div>
-            <label htmlFor="filterMonth" className="block text-sm font-medium text-gray-700">Bulan</label>
-            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="mt-1 input-field">
+            <label htmlFor="filterMonth" className="block text-sm font-medium text-text-secondary mb-1">Bulan</label>
+            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="input-field">
               {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filterYear" className="block text-sm font-medium text-gray-700">Tahun</label>
-            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="mt-1 input-field">
+            <label htmlFor="filterYear" className="block text-sm font-medium text-text-secondary mb-1">Tahun</label>
+            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="input-field">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-10">Cari</button>
+          <button
+            type="submit"
+            className="bg-primary hover:bg-primary-dark text-white font-medium py-2.5 px-4 rounded-lg h-10 self-end" // Adjusted padding and self-end
+          >
+            Cari
+          </button>
         </div>
       </form>
 
-      {user?.is_admin && ( 
-        <div className="mb-4 text-right">
-          <button onClick={handleExcelDownload} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-            Download Data (Excel)
-          </button>
-        </div>
-      )}
+      {/* Removed old admin-only Excel download button location */}
 
-      {loading ? <p className="text-center">Memuat dokumen...</p> : (
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      {loading ? <p className="text-center text-text-secondary py-10">Memuat dokumen...</p> : (
+        <div className="bg-content-bg shadow-xl rounded-xl overflow-x-auto">
+          <table className="min-w-full divide-y divide-border-color">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No Surat</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perihal</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pengirim</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tgl Upload</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Uploader</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokumen Respon</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">No Surat</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Pengirim</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider hidden sm:table-cell">Uploader</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Disposisi / Tindak Lanjut</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-content-bg divide-y divide-border-color">
               {documents.length > 0 ? documents.map(doc => (
-                <tr key={doc.document_id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doc.nomor_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.tipe_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.jenis_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={doc.perihal}>{doc.perihal}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {/* Show "Tambah Respon" if it's Surat Masuk and no response document */}
-                    {doc.tipe_surat === 'Surat Masuk' && !doc.response_storage_path ? (
-                       <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
+                <tr key={doc.document_id} className="hover:bg-page-bg transition-colors duration-150">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">{doc.nomor_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.tipe_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.jenis_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary max-w-xs truncate" title={doc.perihal}>{doc.perihal}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden sm:table-cell">{doc.uploader_nama}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    { doc.tipe_surat === 'Surat Masuk' ? (
+                      <button onClick={() => openDispositionModal(doc)} className="p-1 hover:bg-gray-200 rounded-full">
+                        {(doc.isi_disposisi || doc.disposition_attachment_path || doc.response_keterangan || doc.response_storage_path) ? (
+                          <img src={process.env.PUBLIC_URL + '/menu-dots-archive.svg'} alt="Edit Disposisi/Tindak Lanjut" className="w-5 h-5 text-text-secondary" />
+                        ) : (
+                          <img src={process.env.PUBLIC_URL + '/addArchive.png'} alt="Tambah Disposisi/Tindak Lanjut" className="w-5 h-5 text-green-500" />
+                        )}
+                      </button>
                     ) : (
-                      // If there is a response document, show preview and delete options
-                      doc.response_storage_path ? (
-                        <span className="space-x-2"> {/* Use a span to group buttons */}
-                          <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
-                          {user?.is_admin && ( // Conditionally render delete response button for admins
-                            <button
-                              onClick={() => handleDeleteResponse(doc)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete Respon
-                            </button>
-                          )}
-                        </span>
-                      ) : (
-                        // If no response document but has_responded is true (due to keterangan), indicate response added
-                         doc.has_responded && doc.response_keterangan && <span>Respon Ditambahkan</span> // Only show if keterangan exists
-                      )
+                      <span className="text-text-light">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
-                    <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
-                    {user?.is_admin && ( // Conditionally render delete document button for admins
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
+                    <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full mx-1" title="Preview">
+                       <img src={process.env.PUBLIC_URL + '/viewArchive.png'} alt="Preview" className="w-5 h-5" />
+                    </button>
+                    {user?.is_admin && (
                       <button
                         onClick={() => handleDelete(doc.document_id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="p-1 hover:bg-gray-200 rounded-full mx-1"
+                        title="Delete"
                       >
-                        Delete
+                        <img src={process.env.PUBLIC_URL + '/binArchive.png'} alt="Delete" className="w-5 h-5" />
                       </button>
                     )}
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={user?.is_admin ? 10 : 9} className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-sm text-text-secondary">Tidak ada dokumen ditemukan.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
       {totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-6 flex justify-center">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
                   <button
                       key={pageNumber}
                       onClick={() => handlePageChange(pageNumber)}
-                      className={`mx-1 px-3 py-1 border rounded ${currentPage === pageNumber ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'}`}
+                      className={`mx-1 px-4 py-2 border rounded-lg text-sm font-medium ${currentPage === pageNumber ? 'bg-primary text-white border-primary' : 'bg-content-bg text-primary border-border-color hover:bg-page-bg'}`}
                   >
                       {pageNumber}
                   </button>
               ))}
           </div>
       )}
-      {/* .input-field styles are now global in index.css */}
-
-      {/* Add the modal component */}
-      {showAddResponseModal && (
-        <AddResponseModal
-          document={selectedDocument}
-          onClose={handleCloseAddResponseModal}
-          onResponseAdded={handleResponseAdded}
+      
+      {showDispositionModal && selectedDocumentForDisposition && (
+        <DispositionFollowUpModal
+          document={selectedDocumentForDisposition}
+          onClose={closeDispositionModal}
+          onActionComplete={handleDispositionActionComplete}
         />
       )}
     </>

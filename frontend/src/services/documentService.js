@@ -148,6 +148,36 @@ const DocumentService = {
       console.error('Error deleting response document:', error);
       throw error.response?.data || { message: 'Failed to delete response document due to network error.' };
     }
+  },
+
+  getRecentDocuments: async (params) => {
+    // params: { limit }
+    try {
+      const response = await api.get('/documents/recent', { params });
+      // Expected: { documents: [...] }
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent documents:', error);
+      throw error.response?.data || { message: 'Failed to fetch recent documents due to network error.' };
+    }
+  },
+
+  updateDispositionAndFollowUp: async (documentId, formData) => {
+    // formData is expected to be a FormData object
+    // It may contain: isi_disposisi, response_keterangan,
+    // dispositionAttachment (file), responseDocument (file),
+    // deleteDispositionAttachment (boolean string), deleteResponseDocument (boolean string)
+    try {
+      const response = await api.put(`/documents/${documentId}/disposition-followup`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // Expected: { message, document }
+    } catch (error) {
+      console.error('Error updating disposition and follow-up:', error);
+      throw error.response?.data || { message: 'Failed to update disposition and follow-up due to network error.' };
+    }
   }
 };
 

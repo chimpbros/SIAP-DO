@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,7 +11,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply bg-slate-100 text-slate-800; /* Default background and text color */
+  @apply bg-page-bg text-text-primary; /* Updated default background and text color */
 }
 
 code {
@@ -17,38 +19,45 @@ code {
     monospace;
 }
 
-/* Custom scrollbar for a more modern look (optional) */
+/* Custom scrollbar themed */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-slate-200;
+  @apply bg-border-color bg-opacity-50; /* Use a lighter, themed track */
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-400 rounded-full;
+  @apply bg-text-secondary rounded-full; /* Themed thumb */
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-500;
+  @apply bg-primary; /* Themed hover thumb */
 }
 
-/* Shared input field style */
+/* Shared input field style - updated for new theme */
 .input-field {
-  @apply shadow-sm appearance-none rounded-lg border border-slate-300 w-full py-2.5 px-3.5 text-slate-700 leading-tight bg-slate-50;
-  /* Tailwind equivalent of:
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    border-radius: 0.5rem; 
-    border-width: 1px;
-    padding: 0.625rem 0.875rem; 
-    line-height: 1.5;
-  */
+  @apply shadow-sm appearance-none rounded-lg border border-input-border w-full py-2 px-3 text-text-primary leading-tight bg-input-bg;
+  /* Adjusted padding to py-2 px-3 for a more standard look, can be fine-tuned */
 }
 .input-field:focus {
-  @apply outline-none ring-2 ring-sky-400 border-sky-500 bg-white;
-  /* Tailwind equivalent of:
-    box-shadow: 0 0 0 2px #38bdf8; 
-  */
+  @apply outline-none ring-2 ring-primary ring-opacity-50 border-primary bg-content-bg; /* Themed focus */
 }
 .input-field::placeholder {
-  @apply text-slate-400;
+  @apply text-text-light; /* Themed placeholder text */
+}
+
+/* General body styling for better default typography and box-sizing */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply antialiased;
+  }
+  *, ::before, ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: theme('borderColor.DEFAULT', currentColor);
+  }
 }

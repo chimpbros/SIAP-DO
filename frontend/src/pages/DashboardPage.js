@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-// Navbar is now in MainLayout
 import StatsService from '../services/statsService';
+import DocumentService from '../services/documentService'; // Added DocumentService
 import AuthService from '../services/authService';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2'; // Changed from Bar to Line
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement, // Added for Line chart
+  LineElement,  // Added for Line chart
   Title,
   Tooltip,
   Legend,
@@ -17,7 +18,8 @@ import {
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement, // Added for Line chart
+  LineElement,  // Added for Line chart
   Title,
   Tooltip,
   Legend
@@ -25,8 +27,14 @@ ChartJS.register(
 
 const DashboardPage = () => {
   const [docCountThisMonth, setDocCountThisMonth] = useState(0);
+  const [totalDocuments, setTotalDocuments] = useState(0);
+  const [suratMasukCount, setSuratMasukCount] = useState(0);
+  const [suratKeluarCount, setSuratKeluarCount] = useState(0);
   const [monthlyStats, setMonthlyStats] = useState([]); // For chart
   const [userName, setUserName] = useState('');
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [recentDocuments, setRecentDocuments] = useState([]);
+  const [loadingRecentDocs, setLoadingRecentDocs] = useState(true);
 
   useEffect(() => {
     const user = AuthService.getCurrentUser();
@@ -36,69 +44,120 @@ const DashboardPage = () => {
 
     const fetchDashboardData = async () => {
       try {
-        const countData = await StatsService.getCountDocumentsThisMonth();
-        setDocCountThisMonth(countData.count);
-        
+        setLoadingStats(true);
+        setLoadingRecentDocs(true);
+
+        const overallStats = await StatsService.getDashboardSummaryStats();
+        setDocCountThisMonth(overallStats.countThisMonth || 0);
+        setTotalDocuments(overallStats.totalDocuments || 0);
+        setSuratMasukCount(overallStats.suratMasukCount || 0);
+        setSuratKeluarCount(overallStats.suratKeluarCount || 0);
+        setLoadingStats(false);
+
         const monthlyData = await StatsService.getMonthlyUploadStats();
-        // Ensure count is a number for the chart
         const formattedMonthlyStats = monthlyData.stats.map(s => ({
             ...s,
-            count: parseInt(s.count, 10) 
+            count: parseInt(s.count, 10)
         }));
         setMonthlyStats(formattedMonthlyStats);
+
+        const recentDocsData = await DocumentService.getRecentDocuments({ limit: 10 });
+        setRecentDocuments(recentDocsData.documents || []);
+        setLoadingRecentDocs(false);
+
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
         alert(error.message || "Gagal memuat data dashboard.");
+        setLoadingStats(false);
+        setLoadingRecentDocs(false);
       }
     };
 
-    if (AuthService.isAuthenticated()) { // Only fetch if authenticated
+    if (AuthService.isAuthenticated()) {
         fetchDashboardData();
     }
   }, []);
 
+  const StatCard = ({ title, value, iconSrc, bgColorClass = 'bg-content-bg' }) => (
+    <div className={`${bgColorClass} p-6 rounded-xl shadow-lg flex items-center space-x-4`}>
+      <div className="flex-shrink-0">
+        <img src={process.env.PUBLIC_URL + iconSrc} alt={title} className="h-12 w-12" />
+      </div>
+      <div>
+        <p className="text-sm text-text-secondary font-medium">{title}</p>
+        <p className="text-3xl font-bold text-text-primary">{loadingStats ? '...' : value}</p>
+      </div>
+    </div>
+  );
+
   return (
-    // Navbar removed, padding is now handled by MainLayout's <main> tag
-    <> 
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
-        <p className="text-lg text-gray-600 mb-8">Selamat datang kembali, {userName || 'Pengguna'}!</p>
+    <>
+      <h1 className="text-2xl font-semibold text-text-primary mb-6">Dashboard</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Card for Documents This Month */}
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Dokumen Bulan Ini</h2>
-            <p className="text-4xl font-bold text-blue-500">{docCountThisMonth}</p>
-            <p className="text-gray-500">dokumen telah diarsipkan bulan ini.</p>
-          </div>
+      {/* Stats Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard title="Total Surat" value={totalDocuments} iconSrc="/messageRed.png" />
+        <StatCard title="Surat Masuk" value={suratMasukCount} iconSrc="/messageblue.png" />
+        <StatCard title="Surat Keluar" value={suratKeluarCount} iconSrc="/messagegreen.png" />
+        <StatCard title="Bulan Ini" value={docCountThisMonth} iconSrc="/messageYellow.png" />
+      </div>
 
-          {/* Card for Add New Document Button */}
-          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center justify-center">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Aksi Cepat</h2>
-            <Link
-              to="/add"
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md transition duration-150 ease-in-out"
-            >
-              Tambah Dokumen Baru
-            </Link>
-          </div>
+      {/* Recent Documents Table and Chart in a two-column layout for larger screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2 bg-content-bg p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold text-text-primary mb-4">Dokumen Terbaru</h2>
+          {loadingRecentDocs ? (
+            <p className="text-text-secondary">Memuat dokumen terbaru...</p>
+          ) : recentDocuments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border-color">
+                <thead className="bg-gray-50"> {/* Consider theming this bg too */}
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">No. Surat</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Pengirim</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-content-bg divide-y divide-border-color">
+                  {recentDocuments.map((doc) => (
+                    <tr key={doc.document_id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">{doc.nomor_surat}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.tipe_surat}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.jenis_surat}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary truncate max-w-xs" title={doc.perihal}>{doc.perihal}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-text-secondary">Tidak ada dokumen terbaru.</p>
+          )}
         </div>
 
         {/* Section for Monthly Upload Statistics Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">Statistik Upload Bulanan</h2>
-          <div className="h-64 bg-gray-200 flex items-center justify-center rounded">
-            {/* Placeholder for chart - e.g., using Chart.js */}
+        <div className="lg:col-span-1 bg-content-bg p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold text-text-primary mb-4">Statistik Surat Bulanan</h2>
+          <div className="h-72"> {/* Adjusted height for better proportion */}
             {monthlyStats.length > 0 ? (
-              <Bar 
+              <Line // Changed from Bar to Line
                 data={{
                   labels: monthlyStats.map(s => s.month_year),
                   datasets: [
                     {
                       label: 'Jumlah Dokumen Diupload',
                       data: monthlyStats.map(s => s.count),
-                      backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                      borderColor: 'rgba(54, 162, 235, 1)',
-                      borderWidth: 1,
+                      fill: true, // Fill area under the line
+                      borderColor: 'rgba(59, 130, 246, 1)', // theme('colors.primary')
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)', // Lighter fill color
+                      tension: 0.3, // Smooths the line
+                      pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                      pointBorderColor: '#fff',
+                      pointHoverBackgroundColor: '#fff',
+                      pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
                     },
                   ],
                 }}
@@ -108,28 +167,44 @@ const DashboardPage = () => {
                   plugins: {
                     legend: {
                       position: 'top',
+                      labels: {
+                        color: '#4B5563' // theme('colors.text-secondary')
+                      }
                     },
                     title: {
                       display: true,
-                      text: 'Grafik Upload Dokumen per Bulan (12 Bulan Terakhir)',
+                      text: 'Upload Dokumen (12 Bulan Terakhir)',
+                      color: '#1F2937' // theme('colors.text-primary')
                     },
                   },
                   scales: {
                     y: {
                       beginAtZero: true,
                       ticks: {
-                        stepSize: 1, // Ensure y-axis shows whole numbers for counts
+                        stepSize: 1,
+                        color: '#4B5563' // theme('colors.text-secondary')
+                      },
+                      grid: {
+                        color: '#E5E7EB' // theme('colors.border-color')
+                      }
+                    },
+                    x: {
+                       ticks: {
+                        color: '#4B5563' // theme('colors.text-secondary')
+                      },
+                      grid: {
+                        display: false // Hiding x-axis grid lines for cleaner look
                       }
                     }
                   }
-                }} 
+                }}
               />
             ) : (
-              <p className="text-gray-500">Data statistik bulanan tidak tersedia atau sedang dimuat...</p>
+              <p className="text-text-secondary text-center pt-10">Data statistik bulanan tidak tersedia...</p>
             )}
           </div>
         </div>
-      {/* Removed redundant closing div, container is in MainLayout */}
+      </div>
     </>
   );
 };

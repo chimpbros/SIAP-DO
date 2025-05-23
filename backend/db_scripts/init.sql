@@ -54,6 +54,22 @@ BEGIN
     END IF;
 END $$;
 
+-- Add column for disposition attachment path if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='disposition_attachment_path') THEN
+        ALTER TABLE documents ADD COLUMN disposition_attachment_path VARCHAR(255);
+    END IF;
+END $$;
+
+-- Add column for disposition original filename if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='disposition_original_filename') THEN
+        ALTER TABLE documents ADD COLUMN disposition_original_filename VARCHAR(255);
+    END IF;
+END $$;
+
 
 -- Create indexes for frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

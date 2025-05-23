@@ -17,6 +17,9 @@ router.post(
 // GET /api/documents - List all accessible documents (with filters and pagination)
 router.get('/', protect, documentController.listDocuments);
 
+// GET /api/documents/recent - Get recent documents for dashboard
+router.get('/recent', protect, documentController.getRecentDocuments);
+
 // GET /api/documents/export/excel - Export documents to Excel
 router.get('/export/excel', protect, documentController.exportDocumentsToExcel);
 
@@ -39,6 +42,14 @@ router.put(
   protect,
   uploadFields, // Use the middleware to handle optional response file upload
   documentController.addResponse // New controller function
+);
+
+// PUT /api/documents/:documentId/disposition-followup - Update disposition and follow-up
+router.put(
+  '/:documentId/disposition-followup',
+  protect,
+  uploadFields, // Handles 'dispositionAttachment' and 'responseDocument'
+  documentController.updateDispositionAndFollowUp
 );
 
 // DELETE /api/documents/responses/:responseId - Delete a specific response document

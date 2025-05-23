@@ -18,6 +18,21 @@ const StatsService = {
       throw error.response?.data || { message: 'Failed to fetch monthly upload stats.' };
     }
   },
+
+  getDashboardSummaryStats: async () => {
+    try {
+      const response = await api.get('/stats/summary');
+      // Expected: {
+      //   countThisMonth: number,
+      //   totalDocuments: number,
+      //   suratMasukCount: number,
+      //   suratKeluarCount: number
+      // }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch dashboard summary stats.' };
+    }
+  }
 };
 
 export default StatsService;

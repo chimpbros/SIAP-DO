@@ -23,34 +23,28 @@ exports.addDocument = async (req, res) => {
     nomor_surat,
     perihal,
     pengirim,
-    isi_disposisi,
-    response_keterangan, // New field for response description
-    archive_without_response // New flag for archiving unresponded Surat Masuk
+    // isi_disposisi, response_keterangan, archive_without_response are removed
+    // as they are handled by the modal flow now.
   } = req.body;
 
   const uploader_user_id = req.user.userId; // From authMiddleware
 
   const originalDocument = req.files && req.files['originalDocument'] ? req.files['originalDocument'][0] : null;
-  const responseDocument = req.files && req.files['responseDocument'] ? req.files['responseDocument'][0] : null;
+  // const responseDocument = req.files && req.files['responseDocument'] ? req.files['responseDocument'][0] : null; // Response document not handled here anymore
 
   // --- Validation ---
   if (!originalDocument) {
     return res.status(400).json({ message: 'Lampiran surat wajib diisi.' });
   }
 
-  if (!tipe_surat || !jenis_surat || !nomor_surat || !perihal) {
+  if (!tipe_surat || !jenis_surat || !nomor_surat || !perihal || !pengirim) { // Added pengirim to validation
     // Clean up uploaded files if validation fails early
     if (originalDocument) fs.unlinkSync(originalDocument.path);
-    if (responseDocument) fs.unlinkSync(responseDocument.path);
-    return res.status(400).json({ message: 'Field Tipe Surat, Jenis Surat, Nomor Surat, dan Perihal wajib diisi.' });
+    // if (responseDocument) fs.unlinkSync(responseDocument.path); // No responseDocument here
+    return res.status(400).json({ message: 'Field Tipe Surat, Jenis Surat, Nomor Surat, Perihal, dan Pengirim wajib diisi.' });
   }
 
-  if (tipe_surat === 'Surat Masuk' && req.body.archive_without_response === undefined && (!pengirim || !isi_disposisi)) {
-    // Clean up uploaded files
-    if (originalDocument) fs.unlinkSync(originalDocument.path);
-    if (responseDocument) fs.unlinkSync(responseDocument.path);
-    return res.status(400).json({ message: 'Untuk Surat Masuk, Pengirim dan Isi Disposisi wajib diisi.' });
-  }
+  // Removed validation for isi_disposisi and response related fields
   // --- End Validation ---
 
   // Store paths relative to the expected mount point inside the Docker container
@@ -58,63 +52,50 @@ exports.addDocument = async (req, res) => {
   const original_filename = originalDocument.originalname;
   const month_year = getCurrentMonthYear();
 
-  // --- Handle Response Data ---
-  let response_storage_path = null;
-  let response_original_filename = null;
-  let response_upload_timestamp = null;
-  let has_responded = false;
-
-  // Check if a response is provided or if archiving without response is requested
-  if (tipe_surat === 'Surat Masuk') {
-      if (responseDocument) {
-          // Store paths relative to the expected mount point inside the Docker container
-          response_storage_path = `/app/uploads/${path.basename(responseDocument.path)}`;
-          response_original_filename = responseDocument.originalname;
-          response_upload_timestamp = new Date(); // Set timestamp if response document is uploaded
-          has_responded = true;
-      }
-
-      // If response_keterangan is provided, consider it responded
-      if (response_keterangan && response_keterangan.trim() !== '') {
-          has_responded = true;
-      }
-
-      // If archive_without_response === true, consider it responded for archiving purposes
-      if (archive_without_response === true) { // Ensure it's explicitly true
-          has_responded = true;
-      }
-  } else {
-      // For non 'Surat Masuk', it's considered responded by default for archiving purposes
-      has_responded = true;
-  }
-  // --- End Handle Response Data ---
-
+  // --- Default values for disposition/response fields for new documents ---
+  // These will be updated later via the modal flow.
+  const isi_disposisi = null; // Default to null
+  const response_storage_path = null;
+  const response_original_filename = null;
+  const response_upload_timestamp = null;
+  const response_keterangan = null;
+  // For a new document, `has_responded` should be false unless it's 'Surat Keluar'.
+  // 'Surat Keluar' doesn't have a response flow in the same way.
+  // 'isi_disposisi' is also specific to 'Surat Masuk' and handled later.
+  const has_responded = tipe_surat === 'Surat Keluar' ? true : false;
+  const disposition_attachment_path = null; // For the new disposition attachment field
 
   try {
-    const newDocument = await Document.create({
+    const newDocumentData = {
       tipe_surat,
       jenis_surat,
       nomor_surat,
       perihal,
-      pengirim: tipe_surat === 'Surat Masuk' ? pengirim : null,
-      isi_disposisi: tipe_surat === 'Surat Masuk' ? isi_disposisi : null,
-      storage_path: original_storage_path, // Use original_storage_path for the main document
+      pengirim, // Pengirim is now always present
+      isi_disposisi, // Will be null initially for Surat Masuk, or always null for Surat Keluar
+      storage_path: original_storage_path,
       original_filename,
       uploader_user_id,
       month_year,
-      // New fields for response
       response_storage_path,
       response_original_filename,
       response_upload_timestamp,
-      response_keterangan: response_keterangan || null, // Save keterangan
-      has_responded, // Save the determined status
-    });
+      response_keterangan,
+      has_responded,
+      disposition_attachment_path, // Add new field
+    };
+
+    // If it's a 'Surat Keluar', pengirim might represent the recipient,
+    // and isi_disposisi is not applicable.
+    // The model's create method will handle inserting these values.
+
+    const newDocument = await Document.create(newDocumentData);
     res.status(201).json({ message: 'Dokumen berhasil ditambahkan.', document: newDocument });
   } catch (error) {
     console.error('Error adding document:', error);
     // Clean up uploaded files in case of database error
     if (originalDocument) fs.unlinkSync(originalDocument.path);
-    if (responseDocument) fs.unlinkSync(responseDocument.path);
+    // if (responseDocument) fs.unlinkSync(responseDocument.path); // No responseDocument here
     res.status(500).json({ message: 'Terjadi kesalahan pada server saat menambahkan dokumen.' });
   }
 };
@@ -465,5 +446,132 @@ exports.deleteResponse = async (req, res) => {
     // In development, send the actual error message for easier debugging
     const errorMessage = process.env.NODE_ENV === 'development' ? error.message : 'Terjadi kesalahan pada server saat menghapus respon dokumen.';
     res.status(500).json({ message: errorMessage });
+  }
+};
+
+exports.getRecentDocuments = async (req, res) => {
+  const { limit = 10 } = req.query;
+  const userIsAdmin = req.user.isAdmin;
+
+  try {
+    const documents = await Document.findRecent({
+      limit: parseInt(limit, 10),
+      userIsAdmin,
+    });
+    res.status(200).json({ documents });
+  } catch (error) {
+    console.error('Error fetching recent documents:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengambil dokumen terbaru.' });
+  }
+};
+
+exports.updateDispositionAndFollowUp = async (req, res) => {
+  const { documentId } = req.params;
+  const {
+    isi_disposisi,
+    response_keterangan,
+    deleteDispositionAttachment,
+    deleteResponseDocument
+  } = req.body;
+  
+  const uploader_user_id = req.user.userId; // Or admin if only admin can do this
+
+  // Files from multer; 'dispositionAttachment' is new, 'responseDocument' is existing for follow-up
+  const dispositionAttachmentFile = req.files && req.files['dispositionAttachment'] ? req.files['dispositionAttachment'][0] : null;
+  const followUpAttachmentFile = req.files && req.files['responseDocument'] ? req.files['responseDocument'][0] : null;
+
+  console.log(`[DEBUG] updateDispositionAndFollowUp - Document ID: ${documentId}`);
+  console.log('[DEBUG] updateDispositionAndFollowUp - Request Body:', JSON.stringify(req.body, null, 2));
+  console.log('[DEBUG] updateDispositionAndFollowUp - Request Files:', JSON.stringify(req.files, null, 2));
+
+  try {
+    const document = await Document.findById(documentId);
+    if (!document) {
+      // Clean up any newly uploaded files if document not found
+      if (dispositionAttachmentFile) fs.unlinkSync(dispositionAttachmentFile.path);
+      if (followUpAttachmentFile) fs.unlinkSync(followUpAttachmentFile.path);
+      return res.status(404).json({ message: 'Dokumen tidak ditemukan.' });
+    }
+
+    // Authorization: Ensure user has permission (e.g., is admin or uploader, or part of specific group)
+    // For now, assuming 'protect' middleware handles basic auth, further role checks can be added.
+
+    const updateData = {};
+
+    // Handle Disposition
+    if (isi_disposisi !== undefined) { // Allow clearing the text
+      updateData.isi_disposisi = isi_disposisi;
+    }
+
+    if (dispositionAttachmentFile) {
+      // If there's an old disposition attachment, delete it
+      if (document.disposition_attachment_path) {
+        const oldDispPath = path.join('/app/uploads', path.basename(document.disposition_attachment_path));
+        if (fs.existsSync(oldDispPath)) fs.unlinkSync(oldDispPath);
+      }
+      updateData.disposition_attachment_path = `/app/uploads/${path.basename(dispositionAttachmentFile.path)}`;
+      updateData.disposition_original_filename = dispositionAttachmentFile.originalname;
+    } else if (deleteDispositionAttachment === 'true' && document.disposition_attachment_path) {
+      const oldDispPath = path.join('/app/uploads', path.basename(document.disposition_attachment_path));
+      if (fs.existsSync(oldDispPath)) fs.unlinkSync(oldDispPath);
+      updateData.disposition_attachment_path = null;
+      updateData.disposition_original_filename = null;
+    }
+
+    // Handle Follow-up (Tindak Lanjut - uses response fields)
+    if (response_keterangan !== undefined) { // Allow clearing the text
+      updateData.response_keterangan = response_keterangan;
+    }
+
+    if (followUpAttachmentFile) {
+      // If there's an old follow-up attachment, delete it
+      if (document.response_storage_path) {
+        const oldFollowUpPath = path.join('/app/uploads', path.basename(document.response_storage_path));
+        if (fs.existsSync(oldFollowUpPath)) fs.unlinkSync(oldFollowUpPath);
+      }
+      updateData.response_storage_path = `/app/uploads/${path.basename(followUpAttachmentFile.path)}`;
+      updateData.response_original_filename = followUpAttachmentFile.originalname;
+      updateData.response_upload_timestamp = new Date();
+    } else if (deleteResponseDocument === 'true' && document.response_storage_path) {
+      const oldFollowUpPath = path.join('/app/uploads', path.basename(document.response_storage_path));
+      if (fs.existsSync(oldFollowUpPath)) fs.unlinkSync(oldFollowUpPath);
+      updateData.response_storage_path = null;
+      updateData.response_original_filename = null;
+      updateData.response_upload_timestamp = null; // Or keep if only text is cleared? For now, nullify.
+    }
+    
+    // Update has_responded logic based on new data
+    // If any follow-up data exists (keterangan or file), it's considered responded.
+    // Disposition alone doesn't mark it as "responded" in the context of a follow-up document.
+    if (updateData.response_keterangan || updateData.response_storage_path) {
+        updateData.has_responded = true;
+    } else if (deleteResponseDocument === 'true' && !response_keterangan && !followUpAttachmentFile) {
+        // If response doc is deleted and no new keterangan/file, mark as not responded
+        updateData.has_responded = false;
+    } else if (document.response_storage_path && !updateData.response_storage_path && !updateData.response_keterangan) {
+        // If existing response file is kept but keterangan is cleared, and no new file, it might still be considered responded if file exists.
+        // This logic might need refinement based on exact business rules.
+        // For now, if response_storage_path becomes null and response_keterangan is empty, has_responded = false.
+        if(!updateData.response_keterangan && !updateData.response_storage_path) {
+            updateData.has_responded = document.tipe_surat === 'Surat Keluar' ? true : false;
+        }
+    }
+
+
+    if (Object.keys(updateData).length === 0 && !dispositionAttachmentFile && !followUpAttachmentFile) {
+      return res.status(200).json({ message: 'Tidak ada perubahan data.', document });
+    }
+    
+    console.log('[DEBUG] updateDispositionAndFollowUp - Update Data Prepared:', JSON.stringify(updateData, null, 2));
+    const updatedDocument = await Document.updateById(documentId, updateData);
+    console.log('[DEBUG] updateDispositionAndFollowUp - Updated Document from DB:', JSON.stringify(updatedDocument, null, 2));
+    res.status(200).json({ message: 'Disposisi dan Tindak Lanjut berhasil diperbarui.', document: updatedDocument });
+
+  } catch (error) {
+    console.error('Error updating disposition and follow-up:', error);
+    // Clean up any newly uploaded files in case of error during DB update
+    if (dispositionAttachmentFile) fs.unlinkSync(dispositionAttachmentFile.path);
+    if (followUpAttachmentFile) fs.unlinkSync(followUpAttachmentFile.path);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
 };
