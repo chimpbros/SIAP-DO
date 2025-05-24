@@ -175,7 +175,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
                   </button>
                 )}
               </div>
-              {dispositionFilePreview && !dispositionFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={dispositionFilePreview} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.disposition_attachment_filename || 'Lihat File'}</a></p>}
+              {dispositionFilePreview && !dispositionFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={`http://localhost:5000${dispositionFilePreview}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.disposition_attachment_filename || 'Lihat File'}</a></p>}
               {dispositionFile && <p className="text-xs text-text-light mt-1">File baru: {dispositionFile.name}</p>}
             </div>
           </div>
@@ -212,7 +212,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
                   </button>
                 )}
               </div>
-              {followUpFilePreview && !followUpFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={followUpFilePreview} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.response_original_filename || 'Lihat File'}</a></p>}
+              {followUpFilePreview && !followUpFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={`http://localhost:5000${followUpFilePreview}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.response_original_filename || 'Lihat File'}</a></p>}
               {followUpFile && <p className="text-xs text-text-light mt-1">File baru: {followUpFile.name}</p>}
             </div>
           </div>

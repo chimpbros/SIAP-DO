@@ -47,8 +47,11 @@ exports.addDocument = async (req, res) => {
   // Removed validation for isi_disposisi and response related fields
   // --- End Validation ---
 
+  console.log(`[DEBUG] addDocument - Original Document Path (Multer): ${originalDocument.path}`);
+  console.log(`[DEBUG] addDocument - Original Document Exists: ${fs.existsSync(originalDocument.path)}`);
+
   // Store paths relative to the expected mount point inside the Docker container
-  const original_storage_path = `/app/uploads/${path.basename(originalDocument.path)}`;
+  const original_storage_path = `/uploads/${path.basename(originalDocument.path)}`;
   const original_filename = originalDocument.originalname;
   const month_year = getCurrentMonthYear();
 
@@ -361,7 +364,7 @@ exports.addResponse = async (req, res) => {
     // Add response document details if uploaded
     if (responseDocument) {
         // Store paths relative to the expected mount point inside the Docker container
-        updateData.response_storage_path = `/app/uploads/${path.basename(responseDocument.path)}`;
+        updateData.response_storage_path = `/uploads/${path.basename(responseDocument.path)}`;
         updateData.response_original_filename = responseDocument.originalname;
         updateData.response_upload_timestamp = new Date();
     } else if (!response_keterangan || response_keterangan.trim() === '') {
@@ -379,6 +382,8 @@ exports.addResponse = async (req, res) => {
 
     // Update the document in the database
     const updatedDocument = await Document.updateById(documentId, updateData);
+    console.log(`[DEBUG] addResponse - Response Document Path (Multer): ${responseDocument ? responseDocument.path : 'N/A'}`);
+    console.log(`[DEBUG] addResponse - Response Document Exists: ${responseDocument ? fs.existsSync(responseDocument.path) : 'N/A'}`);
 
     res.status(200).json({ message: 'Respon berhasil ditambahkan.', document: updatedDocument });
 
@@ -509,7 +514,7 @@ exports.updateDispositionAndFollowUp = async (req, res) => {
         const oldDispPath = path.join('/app/uploads', path.basename(document.disposition_attachment_path));
         if (fs.existsSync(oldDispPath)) fs.unlinkSync(oldDispPath);
       }
-      updateData.disposition_attachment_path = `/app/uploads/${path.basename(dispositionAttachmentFile.path)}`;
+      updateData.disposition_attachment_path = `/uploads/${path.basename(dispositionAttachmentFile.path)}`;
       updateData.disposition_original_filename = dispositionAttachmentFile.originalname;
     } else if (deleteDispositionAttachment === 'true' && document.disposition_attachment_path) {
       const oldDispPath = path.join('/app/uploads', path.basename(document.disposition_attachment_path));
@@ -529,7 +534,7 @@ exports.updateDispositionAndFollowUp = async (req, res) => {
         const oldFollowUpPath = path.join('/app/uploads', path.basename(document.response_storage_path));
         if (fs.existsSync(oldFollowUpPath)) fs.unlinkSync(oldFollowUpPath);
       }
-      updateData.response_storage_path = `/app/uploads/${path.basename(followUpAttachmentFile.path)}`;
+      updateData.response_storage_path = `/uploads/${path.basename(followUpAttachmentFile.path)}`;
       updateData.response_original_filename = followUpAttachmentFile.originalname;
       updateData.response_upload_timestamp = new Date();
     } else if (deleteResponseDocument === 'true' && document.response_storage_path) {
@@ -566,6 +571,10 @@ exports.updateDispositionAndFollowUp = async (req, res) => {
     const updatedDocument = await Document.updateById(documentId, updateData);
     console.log('[DEBUG] updateDispositionAndFollowUp - Updated Document from DB:', JSON.stringify(updatedDocument, null, 2));
     res.status(200).json({ message: 'Disposisi dan Tindak Lanjut berhasil diperbarui.', document: updatedDocument });
+    console.log(`[DEBUG] updateDispositionAndFollowUp - Disposition Attachment Path (Multer): ${dispositionAttachmentFile ? dispositionAttachmentFile.path : 'N/A'}`);
+    console.log(`[DEBUG] updateDispositionAndFollowUp - Disposition Attachment Exists: ${dispositionAttachmentFile ? fs.existsSync(dispositionAttachmentFile.path) : 'N/A'}`);
+    console.log(`[DEBUG] updateDispositionAndFollowUp - Follow-up Attachment Path (Multer): ${followUpAttachmentFile ? followUpAttachmentFile.path : 'N/A'}`);
+    console.log(`[DEBUG] updateDispositionAndFollowUp - Follow-up Attachment Exists: ${followUpAttachmentFile ? fs.existsSync(followUpAttachmentFile.path) : 'N/A'}`);
 
   } catch (error) {
     console.error('Error updating disposition and follow-up:', error);
