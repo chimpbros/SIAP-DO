@@ -146,7 +146,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
           {/* Disposisi Section */}
           <div className="p-4 border border-border-color rounded-lg">
             <h3 className="text-lg font-medium text-text-primary mb-3 flex items-center">
-              <img src={process.env.PUBLIC_URL + '/apps.svg'} alt="Disposisi" className="w-5 h-5 mr-2 opacity-70" /> {/* Placeholder icon */}
+              <img src={process.env.PUBLIC_URL + '/disposition.png'} alt="Disposisi" className="w-5 h-5 mr-2 opacity-70" /> {/* Disposition icon */}
               Disposisi
             </h3>
             <div>
@@ -183,7 +183,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
           {/* Tindak Lanjut Section */}
           <div className="p-4 border border-border-color rounded-lg">
             <h3 className="text-lg font-medium text-text-primary mb-3 flex items-center">
-              <img src={process.env.PUBLIC_URL + '/list.svg'} alt="Tindak Lanjut" className="w-5 h-5 mr-2 opacity-70" /> {/* Placeholder icon */}
+              <img src={process.env.PUBLIC_URL + '/response.png'} alt="Tindak Lanjut" className="w-5 h-5 mr-2 opacity-70" /> {/* Tindak Lanjut icon */}
               Tindak Lanjut
             </h3>
             <div>
