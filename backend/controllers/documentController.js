@@ -145,9 +145,7 @@ exports.previewDocument = async (req, res) => {
     }
 
     // Determine which file path to use for preview (original or response)
-    const filePathToPreview = document.response_storage_path
-      ? path.join('/app/uploads', path.basename(document.response_storage_path)) // Use response path if available
-      : path.join('/app/uploads', path.basename(document.storage_path)); // Otherwise, use original path
+    const filePathToPreview = path.join('/app/uploads', path.basename(document.storage_path)); // Always use original path for preview
 
     if (fs.existsSync(filePathToPreview)) {
       res.sendFile(filePathToPreview);
