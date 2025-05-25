@@ -125,3 +125,7 @@ Thumbs.db
 
 # Uploaded files
 backend/uploads/
+
+# Documentation files
+REDESIGN_PLAN.md
+rules.md
