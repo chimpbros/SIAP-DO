@@ -57,6 +57,7 @@ services:
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Ensure updated nginx.conf is used
       - /etc/letsencrypt:/etc/letsencrypt:ro # Mount the entire letsencrypt directory
+      - ./backend/uploads:/app/backend/uploads:ro # Mount uploads directory from backend for Nginx to serve
     networks:
       - siap_network_compose
 
