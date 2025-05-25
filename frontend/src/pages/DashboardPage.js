@@ -78,14 +78,16 @@ const DashboardPage = () => {
     }
   }, []);
 
-  const StatCard = ({ title, value, iconSrc, bgColorClass = 'bg-content-bg' }) => (
-    <div className={`${bgColorClass} p-6 rounded-xl shadow-lg flex items-center space-x-4`}>
-      <div className="flex-shrink-0">
-        <img src={process.env.PUBLIC_URL + iconSrc} alt={title} className="h-12 w-12" />
-      </div>
-      <div>
-        <p className="text-sm text-text-secondary font-medium">{title}</p>
-        <p className="text-3xl font-bold text-text-primary">{loadingStats ? '...' : value}</p>
+  const StatCard = ({ title, value, iconSrc, bgColorClass = 'bg-content-bg', wrapperClass = '' }) => (
+    <div className={`${wrapperClass}`}> {/* Wrapper div for responsive classes */}
+      <div className={`${bgColorClass} p-6 rounded-xl shadow-lg flex items-center space-x-4 h-full`}> {/* Added h-full for consistent height if wrapped */}
+        <div className="flex-shrink-0">
+          <img src={process.env.PUBLIC_URL + iconSrc} alt={title} className="h-12 w-12" />
+        </div>
+        <div>
+          <p className="text-sm text-text-secondary font-medium">{title}</p>
+          <p className="text-3xl font-bold text-text-primary">{loadingStats ? '...' : value}</p>
+        </div>
       </div>
     </div>
   );
@@ -95,11 +97,12 @@ const DashboardPage = () => {
       <h1 className="text-2xl font-semibold text-text-primary mb-6">Dashboard</h1>
 
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Adjusted grid to be 1 column on mobile, 2 on md, 4 on lg. Total Surat always visible. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard title="Total Surat" value={totalDocuments} iconSrc="/messageRed.png" />
-        <StatCard title="Surat Masuk" value={suratMasukCount} iconSrc="/messageblue.png" />
-        <StatCard title="Surat Keluar" value={suratKeluarCount} iconSrc="/messagegreen.png" />
-        <StatCard title="Bulan Ini" value={docCountThisMonth} iconSrc="/messageYellow.png" />
+        <StatCard title="Surat Masuk" value={suratMasukCount} iconSrc="/messageblue.png" wrapperClass="hidden md:block" />
+        <StatCard title="Surat Keluar" value={suratKeluarCount} iconSrc="/messagegreen.png" wrapperClass="hidden md:block" />
+        <StatCard title="Bulan Ini" value={docCountThisMonth} iconSrc="/messageYellow.png" wrapperClass="hidden md:block" />
       </div>
 
       {/* Recent Documents Table and Chart in a two-column layout for larger screens */}

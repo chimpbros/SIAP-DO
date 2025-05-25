@@ -1,63 +1,98 @@
-# UI Redesign Plan
+# Mobile Responsiveness Enhancement Plan (Revised)
 
-This document outlines the detailed plan for redesigning the UI of the application, focusing on the dashboard and main page, addressing the user's specific requirements.
+This document outlines the plan to improve the mobile responsiveness of the SIAP application.
 
-## Goals
+## 1. Sidebar Transformation to Hamburger Menu (Mobile)
 
-### Goal 1: Address Top Div Gap and Remove Search Bar
-*   **File:** `frontend/src/components/TopBar.js`
-*   **Changes:**
-    *   Remove the `left` style property and the `ml-` classes from the main `div` of the `TopBar` component. This will ensure the top bar aligns correctly with the main content area, which is already being managed by `MainLayout.js`.
-    *   Completely remove the search bar `form` element and its contents from `TopBar.js`.
+*   **Goal:** Replace the persistent sidebar with a hamburger-triggered dropdown/overlay menu on mobile screens.
+*   **Files to Modify:**
+    *   `frontend/src/components/MainLayout.js`
+    *   `frontend/src/components/TopBar.js`
+    *   `frontend/src/components/Sidebar.js`
+    *   Possibly global CSS or `frontend/src/index.css` for fine-tuning.
 
-### Goal 2: Adjust Main Logo Text
-*   **File:** `frontend/src/components/TopBar.js`
-*   **Changes:**
-    *   Reduce the font size of the logo text from `text-xl` to `text-base`.
-    *   Modify the logo text to be split into two lines: "Sistem Informasi" and "Administrasi Pengarsipan", by wrapping them in `span` tags within a `div` and adding a line break. Add `leading-tight` for compact line height.
+*   **Steps:**
+    1.  **State Management in `MainLayout.js`:**
+        *   Introduce a new state variable, `isMobileMenuOpen`, initialized to `false`.
+        *   Create a function `toggleMobileMenu` to update this state.
+        *   Pass `isMobileMenuOpen` and `toggleMobileMenu` as props to `TopBar` and `Sidebar`.
+    2.  **Hamburger Icon and Logo/Title in `TopBar.js`:**
+        *   **Logo and Title (Left Side):**
+            *   The existing logo (`frontend/public/polri.png`) and text ("Sistem Informasi Administrasi Pengarsipan") will remain on the left side of the `TopBar`. The text currently has `hidden md:block` (see `TopBar.js`), this will be maintained unless further changes are requested for its mobile visibility.
+        *   **Hamburger Icon (Right Side):**
+            *   Add a hamburger icon button to the *right* side of the `TopBar`.
+            *   This button should be visible only on mobile screens (e.g., using Tailwind's `md:hidden` class).
+            *   On click, it should call `toggleMobileMenu` (passed from `MainLayout`).
+        *   **Layout:**
+            *   The `TopBar` already uses `justify-between` (see `TopBar.js`), which will help position the logo/title on the left and the new hamburger menu on the right.
+            *   The `TopBar`'s `left` style/margin will be `0` on mobile screens (when the main sidebar is hidden). On desktop, it will continue to adjust based on `sidebarIsPinned`.
+    3.  **Responsive Sidebar Logic in `Sidebar.js`:**
+        *   **Mobile View (e.g., screen width < `md` breakpoint):**
+            *   The sidebar should be hidden by default.
+            *   When `isMobileMenuOpen` is `true`, the sidebar should appear. It could be an overlay (fixed position, high z-index, covering part of the screen) or slide in from the left.
+            *   The existing `isPinned` and `isHovered` logic should likely be disabled or adapted for mobile. On mobile, the sidebar, when open, might always be "expanded" in terms of showing text.
+            *   The sidebar width should be appropriate for mobile (e.g., `w-3/4`, `w-full sm:w-64`).
+            *   Add a close button (e.g., 'X' icon) within the mobile sidebar or make clicking the overlay background close the menu.
+        *   **Desktop View (e.g., screen width >= `md` breakpoint):**
+            *   Retain the current pinning and hover functionality.
+    4.  **Main Content Adjustment in `MainLayout.js`:**
+        *   On mobile screens, the main content area (`div` containing `<Outlet />`) should not have a `marginLeft` to account for a persistent sidebar. Its `marginLeft` should be `0`.
 
-### Goal 3: Update Sidebar Color and Text
-*   **File:** `frontend/tailwind.config.js`
-*   **Changes:**
-    *   Change the `sidebar-bg` color to white (`#FFFFFF`).
-    *   Change the `sidebar-text` color to a darker light gray (`#6B7280`), which is already defined as `text-light` in your Tailwind config.
-    *   Adjust the `sidebar-hover-bg` color to a lighter shade (`#F0F4FA`), which is your `page-bg` color, to ensure good contrast on the white sidebar.
-    *   The `sidebar-active-bg` (primary blue) and `sidebar-active-text` (white) will remain unchanged as they align with the example design.
+## 2. Dashboard Page: Hide Specific Stat Cards (Mobile)
 
-### Goal 4: Ensure Main Layout Compatibility
-*   **File:** `frontend/src/components/MainLayout.js`
-*   **Changes:**
-    *   No direct changes are needed in `MainLayout.js`. The existing `mainContentMarginLeftClass` correctly handles the main content's positioning, and the adjustments in `TopBar.js` will ensure it integrates seamlessly.
+*   **Goal:** Remove "Surat Masuk", "Surat Keluar", and "Bulan Ini" stat cards on mobile view.
+*   **File to Modify:** `frontend/src/pages/DashboardPage.js`
+*   **Steps:**
+    1.  Identify the `StatCard` components for "Surat Masuk", "Surat Keluar", and "Bulan Ini".
+    2.  Apply Tailwind's responsive utility classes to the parent `div` of each of these specific `StatCard` instances (e.g., `hidden md:flex`).
+    3.  The grid layout (`grid-cols-1 md:grid-cols-2 lg:grid-cols-4`) will adjust.
 
-### Goal 5: Fix "Total Surat" Icon
-*   **File:** `frontend/src/pages/DashboardPage.js`
-*   **Changes:**
-    *   No code changes needed in `DashboardPage.js` as the `iconSrc="/messageRed.png"` is now valid since the user has provided the `messageRed.png` file.
+## 3. Archive Page: Responsive Search Field
 
-## Visual Representation of the Plan
+*   **Goal:** Ensure the "Cari Dokumen" search field and its associated filters adjust to screen width on mobile.
+*   **File to Modify:** `frontend/src/pages/ArchiveListPage.js`
+*   **Steps:**
+    1.  The search form uses `grid grid-cols-1 md:grid-cols-4 gap-4 items-end`.
+    2.  The `input-field` class should ensure inputs take full width (e.g., `w-full`).
+    3.  Verify the grid layout stacks elements correctly on mobile.
+    4.  Verify the "Cari" button stacks and sizes appropriately on mobile.
+
+## 4. Admin Page: Responsive Table
+
+*   **Goal:** Make the table on the admin page adjust to screen width.
+*   **File to Modify:** `frontend/src/pages/AdminDashboardPage.js`
+*   **Steps:**
+    1.  The `UserTable` component wraps the `table` in a `div` with `overflow-x-auto` and the `table` has `min-w-full`.
+    2.  Verify this setup and the responsive column hiding (`hidden md:table-cell`, etc.).
+
+## Visual Plan
 
 ```mermaid
 graph TD
-    A[Start UI Redesign] --> B{Analyze Requirements};
-    B --> C[Identify Relevant Files];
-    C --> D[Read TopBar.js];
-    D --> E[Read Sidebar.js];
-    E --> F[Read tailwind.config.js];
-    F --> G[Read index.css];
-    G --> H[Read MainLayout.js];
-    H --> I[Read DashboardPage.js];
-    I --> J{Formulate Detailed Plan};
-    J --> K[Goal 1: Top Div Gap & Search Bar];
-    J --> L[Goal 2: Main Logo Text];
-    J --> M[Goal 3: Sidebar Color & Text];
-    J --> N[Goal 4: Main Layout Compatibility (No direct changes needed)];
-    J --> O[Goal 5: Fix "Total Surat" Icon (Resolved)];
-    K --> K1[Modify TopBar.js: Remove left style and ml classes];
-    K --> K2[Modify TopBar.js: Remove search bar];
-    L --> L1[Modify TopBar.js: Adjust font size and split text];
-    M --> M1[Modify tailwind.config.js: Update sidebar-bg to white];
-    M --> M2[Modify tailwind.config.js: Update sidebar-text to light gray];
-    M --> M3[Modify tailwind.config.js: Update sidebar-hover-bg];
-    O --> O1[Confirm messageRed.png provided];
-    O1 --> P[Plan Finalized];
-    P --> Q[Implement Changes in Code Mode];
+    A[Start: Mobile Responsiveness Task] --> B{1. Sidebar to Hamburger};
+    B --> B1[Modify MainLayout.js: Add isMobileMenuOpen state, toggleMobileMenu function];
+    B --> B2[Modify TopBar.js: Add md:hidden hamburger icon (RIGHT), call toggleMobileMenu, adjust left margin for mobile, RETAIN logo/title (LEFT)];
+    B --> B3[Modify Sidebar.js: Conditional rendering/styling for mobile (overlay/slide-in), disable/adapt pin/hover for mobile];
+    B --> B4[Modify MainLayout.js: Adjust main content marginLeft for mobile];
+
+    A --> C{2. Dashboard: Hide Stat Cards};
+    C --> C1[Modify DashboardPage.js: Apply 'hidden md:flex' to specific StatCards];
+
+    A --> D{3. Archive Page: Responsive Search};
+    D --> D1[Modify ArchiveListPage.js: Ensure 'input-field' is w-full, verify grid stacking (md:grid-cols-4 -> grid-cols-1)];
+
+    A --> E{4. Admin Page: Responsive Table};
+    E --> E1[Modify AdminDashboardPage.js: Verify existing 'overflow-x-auto' and responsive column hiding ('hidden md:table-cell')];
+
+    B1 --> F[Test Sidebar on Mobile & Desktop];
+    B2 --> F;
+    B3 --> F;
+    B4 --> F;
+    C1 --> G[Test Dashboard on Mobile & Desktop];
+    D1 --> H[Test Archive Search on Mobile & Desktop];
+    E1 --> I[Test Admin Table on Mobile & Desktop];
+
+    F --> Z[Completion];
+    G --> Z;
+    H --> Z;
+    I --> Z;

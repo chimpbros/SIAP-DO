@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 // Navbar is now in MainLayout
 import AdminService from '../services/adminService';
@@ -84,48 +84,69 @@ const AdminDashboardPage = () => {
     }
   };
 
-  const UserTable = ({ title, userList, showAdminToggle = false, showApprovalActions = false, isPendingTable = false }) => (
+  const UserTable = ({ title, userList, showAdminToggle = false, showApprovalActions = false, isPendingTable = false }) => {
+    // const tableContainerRef = useRef(null); // Logging removed
+
+    // useEffect(() => { // Logging removed
+    //   const logTableWidths = () => {
+    //     if (tableContainerRef.current) {
+    //       console.log(`AdminDashboardPage UserTable (${title}) container: offsetWidth=${tableContainerRef.current.offsetWidth}, scrollWidth=${tableContainerRef.current.scrollWidth}`);
+    //     }
+    //   };
+    //   logTableWidths();
+    //   if (userList.length > 0) {
+    //     logTableWidths();
+    //   }
+    //   window.addEventListener('resize', logTableWidths);
+    //   return () => {
+    //     window.removeEventListener('resize', logTableWidths);
+    //   };
+    // }, [userList, title]);
+
+    return (
     <div className="mb-8">
       <h2 className="text-xl font-semibold text-gray-700 mb-3">{title}</h2>
       {loading && isPendingTable && <p>Memuat permintaan...</p>}
       {loading && !isPendingTable && <p>Memuat pengguna...</p>}
       {!loading && error && <p className="text-red-500">{error}</p>}
       {!loading && !error && (
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
+        <div /* ref={tableContainerRef} // Logging removed */ className="bg-white shadow-md rounded-lg overflow-x-auto w-full"> {/* Added w-full */}
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pangkat</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">NRP</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pangkat</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NRP</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status Admin</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Admin</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {userList.length > 0 ? userList.map(user => (
                 <tr key={user.user_id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.pangkat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{user.nrp}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{user.is_admin ? 'Admin' : 'User'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {isPendingTable && ( 
-                      <>
-                        <button onClick={() => handleApprove(user.user_id)} className="text-green-600 hover:text-green-900">Setujui</button>
-                        <button onClick={() => handleDeleteUser(user.user_id, user.nama)} className="text-red-600 hover:text-red-900 ml-2">Hapus</button>
-                      </>
-                    )}
-                    {!isPendingTable && user.is_approved && ( 
-                       <>
-                        <button onClick={() => handleRevoke(user.user_id)} className="text-red-600 hover:text-red-900">Cabut Akses</button>
-                        <button onClick={() => handleToggleAdmin(user.user_id, user.is_admin)} className="text-blue-600 hover:text-blue-900">
-                          {user.is_admin ? 'Hapus Admin' : 'Jadikan Admin'}
-                        </button>
-                       </>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-xs truncate" title={user.nama}>{user.nama}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.pangkat}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.nrp}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={user.email}>{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.is_admin ? 'Admin' : 'User'}</td>
+                  <td className="px-6 py-4 text-sm font-medium"> {/* Removed whitespace-nowrap and space-x-2 */}
+                    <div className="flex flex-col space-y-1 sm:flex-row sm:space-y-0 sm:space-x-2 items-start sm:items-center">
+                      {isPendingTable && (
+                        <>
+                          <button onClick={() => handleApprove(user.user_id)} className="text-green-600 hover:text-green-900">Setujui</button>
+                          <button onClick={() => handleDeleteUser(user.user_id, user.nama)} className="text-red-600 hover:text-red-900 sm:ml-2">Hapus</button> {/* sm:ml-2 for horizontal */}
+                        </>
+                      )}
+                      {!isPendingTable && user.is_approved && (
+                         <>
+                          <button onClick={() => handleRevoke(user.user_id)} className="text-red-600 hover:text-red-900">Cabut Akses</button>
+                          <button onClick={() => handleToggleAdmin(user.user_id, user.is_admin)} className="text-blue-600 hover:text-blue-900">
+                            {user.is_admin ? 'Hapus Admin' : 'Jadikan Admin'}
+                          </button>
+                         </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -137,6 +158,7 @@ const AdminDashboardPage = () => {
       )}
     </div>
   );
+};
 
   return (
     // Navbar removed, container and padding are now handled by MainLayout's <main> tag

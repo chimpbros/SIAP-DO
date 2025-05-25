@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 // Navbar is now in MainLayout
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import DocumentService from '../services/documentService';
@@ -20,6 +20,7 @@ const ArchiveListPage = () => {
 
   const [showDispositionModal, setShowDispositionModal] = useState(false);
   const [selectedDocumentForDisposition, setSelectedDocumentForDisposition] = useState(null);
+  // const tableContainerRef = useRef(null); // Logging removed
 
 
   useEffect(() => {
@@ -59,6 +60,22 @@ const ArchiveListPage = () => {
         fetchDocuments(currentPage);
     }
   }, [user, currentPage, fetchDocuments]); // Added fetchDocuments to dependency array
+
+  // useEffect(() => { // Logging removed
+  //   const logTableWidths = () => {
+  //     if (tableContainerRef.current) {
+  //       console.log(`ArchiveListPage Table container: offsetWidth=${tableContainerRef.current.offsetWidth}, scrollWidth=${tableContainerRef.current.scrollWidth}`);
+  //     }
+  //   };
+  //   logTableWidths();
+  //   if (documents.length > 0) {
+  //       logTableWidths();
+  //   }
+  //   window.addEventListener('resize', logTableWidths);
+  //   return () => {
+  //     window.removeEventListener('resize', logTableWidths);
+  //   };
+  // }, [documents]);
 
   const handleDelete = async (documentId) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus dokumen ini?')) {
@@ -229,9 +246,9 @@ const ArchiveListPage = () => {
           {user?.is_admin && (
             <button
               onClick={handleExcelDownload}
-              className="bg-content-bg hover:bg-gray-100 text-text-primary border border-border-color font-medium py-2 px-4 rounded-lg flex items-center"
+              className="bg-content-bg hover:bg-gray-100 text-text-primary border border-border-color font-medium py-2 px-4 rounded-lg flex items-center whitespace-nowrap" /* Added whitespace-nowrap */
             >
-               <img src={process.env.PUBLIC_URL + '/file-export.svg'} alt="Export" className="w-5 h-5 mr-2" />
+               <img src={process.env.PUBLIC_URL + '/file-export.svg'} alt="Export" className="w-5 h-5 mr-2 flex-shrink-0" /> {/* Added flex-shrink-0 to icon */}
               Export
             </button>
           )}
@@ -240,26 +257,30 @@ const ArchiveListPage = () => {
       
       {/* Filters section - can be refined later, for now keeping existing logic with new styling */}
       <form onSubmit={handleSearch} className="bg-content-bg p-4 rounded-xl shadow-lg mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
+        {/* Responsive grid: 1 col on xs, 2 on sm, 4 on lg */}
+        {/* Responsive grid: 1 col on xs, 2 on md, 4 on lg */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          {/* Search Term Input - Takes full width on xs, 2 cols on md, 1 on lg */}
+          <div className="md:col-span-2 lg:col-span-1">
             <label htmlFor="searchTerm" className="block text-sm font-medium text-text-secondary mb-1">Cari Dokumen</label>
-            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field" placeholder="Nomor, Perihal, Pengirim..." />
+            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field w-full" placeholder="Nomor, Perihal, Pengirim..." />
           </div>
           <div>
             <label htmlFor="filterMonth" className="block text-sm font-medium text-text-secondary mb-1">Bulan</label>
-            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="input-field">
+            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="input-field w-full">
               {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
           <div>
             <label htmlFor="filterYear" className="block text-sm font-medium text-text-secondary mb-1">Tahun</label>
-            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="input-field">
+            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="input-field w-full">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
+          {/* Search Button - Takes full width on xs, auto on md+ */}
           <button
             type="submit"
-            className="bg-primary hover:bg-primary-dark text-white font-medium py-2.5 px-4 rounded-lg h-10 self-end" // Adjusted padding and self-end
+            className="bg-primary hover:bg-primary-dark text-white font-medium py-2.5 px-4 rounded-lg h-10 w-full md:w-auto self-end"
           >
             Cari
           </button>
@@ -269,7 +290,7 @@ const ArchiveListPage = () => {
       {/* Removed old admin-only Excel download button location */}
 
       {loading ? <p className="text-center text-text-secondary py-10">Memuat dokumen...</p> : (
-        <div className="bg-content-bg shadow-xl rounded-xl overflow-x-auto">
+        <div /* ref={tableContainerRef} // Logging removed */ className="bg-content-bg shadow-xl rounded-xl overflow-x-auto w-full"> {/* Added w-full */}
           <table className="min-w-full divide-y divide-border-color">
             <thead className="bg-gray-50">
               <tr>
@@ -277,8 +298,8 @@ const ArchiveListPage = () => {
                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
-                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Pengirim</th>
-                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden sm:table-cell">Uploader</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Pengirim</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Uploader</th>
                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Disposisi / Tindak Lanjut</th>
                 <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Aksi</th>
               </tr>
@@ -290,9 +311,9 @@ const ArchiveListPage = () => {
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.tipe_surat}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.jenis_surat}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary max-w-xs truncate text-center" title={doc.perihal}>{doc.perihal}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden md:table-cell text-center">{doc.pengirim || 'N/A'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden sm:table-cell text-center">{doc.uploader_nama}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.pengirim || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.uploader_nama}</td>
+                  <td className="px-4 py-3 text-sm text-center"> {/* Removed whitespace-nowrap */}
                     { doc.tipe_surat === 'Surat Masuk' ? (
                       <button onClick={() => openDispositionModal(doc)} className="p-1 hover:bg-gray-200 rounded-full">
                         {(doc.isi_disposisi || doc.disposition_attachment_path || doc.response_keterangan || doc.response_storage_path) ? (
@@ -305,15 +326,15 @@ const ArchiveListPage = () => {
                       <span className="text-text-light">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                    <div className="flex justify-center items-center">
-                      <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full mx-1" title="Preview">
+                  <td className="px-4 py-3 text-sm font-medium text-center"> {/* Removed whitespace-nowrap */}
+                    <div className="flex flex-wrap justify-center items-center space-x-1"> {/* Added flex-wrap and space-x-1 for better spacing */}
+                      <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full" title="Preview"> {/* Removed mx-1 */}
                          <img src={process.env.PUBLIC_URL + '/viewArchive.png'} alt="Preview" className="w-5 h-5" />
                       </button>
                       {user?.is_admin && (
                         <button
                           onClick={() => handleDelete(doc.document_id)}
-                          className="p-1 hover:bg-gray-200 rounded-full mx-1"
+                          className="p-1 hover:bg-gray-200 rounded-full" /* Removed mx-1 */
                           title="Delete"
                         >
                           <img src={process.env.PUBLIC_URL + '/binArchive.png'} alt="Delete" className="w-5 h-5" />
