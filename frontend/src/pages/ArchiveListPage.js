@@ -226,13 +226,6 @@ const ArchiveListPage = () => {
           <p className="text-sm text-text-secondary">Lihat dan atur seluruh surat, tambahkan disposisi atau tindak lanjut.</p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={() => {/* Logic for search focus or modal */}}
-            className="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg flex items-center"
-          >
-            <img src={process.env.PUBLIC_URL + '/search.svg'} alt="Search" className="w-5 h-5 mr-2" />
-            Search
-          </button>
           {user?.is_admin && (
             <button
               onClick={handleExcelDownload}
