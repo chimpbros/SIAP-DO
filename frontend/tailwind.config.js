@@ -7,9 +7,9 @@ module.exports = {
     extend: {
       colors: {
         'page-bg': '#F0F4FA', // Light blue page background
-        'sidebar-bg': '#2D3748', // Dark gray sidebar background
-        'sidebar-text': '#E2E8F0', // Light gray text for sidebar
-        'sidebar-hover-bg': '#4A5568', // Hover background for sidebar items
+        'sidebar-bg': '#FFFFFF', // White sidebar background
+        'sidebar-text': '#6B7280', // Light gray text for sidebar
+        'sidebar-hover-bg': '#F0F4FA', // Hover background for sidebar items
         'sidebar-active-bg': '#3B82F6', // Active background for sidebar items (primary blue)
         'sidebar-active-text': '#FFFFFF', // White text for active sidebar items
         'primary': '#3B82F6', // Primary blue for buttons, links

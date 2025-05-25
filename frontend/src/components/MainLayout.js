@@ -45,9 +45,9 @@ const MainLayout = () => {
         isPinned={isSidebarPinned}
         onTogglePin={handleToggleSidebarPin}
       />
-      <div className={`flex-grow flex flex-col ${mainContentMarginLeftClass} transition-all duration-300 ease-in-out`}>
-        <TopBar sidebarIsPinned={isSidebarPinned} />
-        <main className="flex-grow p-6 pt-20"> {/* pt-16 for topbar height (h-16) + p-4 for content padding */}
+      <TopBar sidebarIsPinned={isSidebarPinned} />
+      <div className={`flex-grow flex flex-col transition-all duration-300 ease-in-out pt-16`} style={{ marginLeft: isSidebarPinned ? '5rem' : '16rem' }}>
+        <main className="flex-grow p-6">
           <Outlet /> {/* Child routes will render here */}
         </main>
         {/* Optional: Footer can be added here, ensuring it also respects the sidebar margin */}

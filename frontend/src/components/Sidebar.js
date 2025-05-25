@@ -82,7 +82,7 @@ const Sidebar = ({ isPinned, onTogglePin }) => {
               <li key={item.name} className="mb-1">
                 <Link
                   to={item.path}
-                  className={`flex items-center py-3 px-6 hover:bg-sidebar-hover-bg transition-colors duration-200 ${
+                  className={`flex items-center py-3 px-6 hover:bg-sidebar-hover-bg hover:text-text-primary transition-colors duration-200 ${
                     isActive ? 'bg-sidebar-active-bg text-sidebar-active-text font-semibold' : ''
                   }`}
                   title={item.name}
@@ -96,10 +96,10 @@ const Sidebar = ({ isPinned, onTogglePin }) => {
         </ul>
       </nav>
 
-      <div className="p-4 mt-auto border-t border-gray-700">
+      <div className="px-4 py-4 mt-auto">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full py-3 px-6 hover:bg-sidebar-hover-bg transition-colors duration-200"
+          className="flex items-center w-full py-3 hover:bg-sidebar-hover-bg transition-colors duration-200"
           title="Logout"
         >
           <img src={process.env.PUBLIC_URL + '/sign-out-alt.svg'} alt="" className="w-6 h-6 flex-shrink-0" /> {/* Added flex-shrink-0 */}
