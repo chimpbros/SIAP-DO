@@ -280,25 +280,25 @@ const ArchiveListPage = () => {
           <table className="min-w-full divide-y divide-border-color">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">No Surat</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Pengirim</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider hidden sm:table-cell">Uploader</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Disposisi / Tindak Lanjut</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Aksi</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">No Surat</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Pengirim</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden sm:table-cell">Uploader</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Disposisi / Tindak Lanjut</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-content-bg divide-y divide-border-color">
               {documents.length > 0 ? documents.map(doc => (
                 <tr key={doc.document_id} className="hover:bg-page-bg transition-colors duration-150">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary">{doc.nomor_surat}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.tipe_surat}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{doc.jenis_surat}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary max-w-xs truncate" title={doc.perihal}>{doc.perihal}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden sm:table-cell">{doc.uploader_nama}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary text-center">{doc.nomor_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.tipe_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.jenis_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary max-w-xs truncate text-center" title={doc.perihal}>{doc.perihal}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden md:table-cell text-center">{doc.pengirim || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary hidden sm:table-cell text-center">{doc.uploader_nama}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                     { doc.tipe_surat === 'Surat Masuk' ? (
                       <button onClick={() => openDispositionModal(doc)} className="p-1 hover:bg-gray-200 rounded-full">
@@ -313,18 +313,20 @@ const ArchiveListPage = () => {
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                    <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full mx-1" title="Preview">
-                       <img src={process.env.PUBLIC_URL + '/viewArchive.png'} alt="Preview" className="w-5 h-5" />
-                    </button>
-                    {user?.is_admin && (
-                      <button
-                        onClick={() => handleDelete(doc.document_id)}
-                        className="p-1 hover:bg-gray-200 rounded-full mx-1"
-                        title="Delete"
-                      >
-                        <img src={process.env.PUBLIC_URL + '/binArchive.png'} alt="Delete" className="w-5 h-5" />
+                    <div className="flex justify-center items-center">
+                      <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full mx-1" title="Preview">
+                         <img src={process.env.PUBLIC_URL + '/viewArchive.png'} alt="Preview" className="w-5 h-5" />
                       </button>
-                    )}
+                      {user?.is_admin && (
+                        <button
+                          onClick={() => handleDelete(doc.document_id)}
+                          className="p-1 hover:bg-gray-200 rounded-full mx-1"
+                          title="Delete"
+                        >
+                          <img src={process.env.PUBLIC_URL + '/binArchive.png'} alt="Delete" className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )) : (
