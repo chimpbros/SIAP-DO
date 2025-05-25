@@ -77,7 +77,7 @@ const Document = {
 
   async findAll({ searchTerm, filterMonth, filterYear, userIsAdmin, limit, offset }) {
     let mainQuerySelect = `
-      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
+      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim, d.isi_disposisi,
                TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
                u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
                d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan, d.has_responded,
@@ -114,12 +114,16 @@ const Document = {
 
     // Construct Count Query
     const countQueryString = `SELECT COUNT(*) FROM documents d JOIN users u ON d.uploader_user_id = u.user_id ${whereClause}`;
+    console.log('[DEBUG] Document.findAll - Count Query:', countQueryString);
+    console.log('[DEBUG] Document.findAll - Count Params:', queryParams);
     const { rows: countRows } = await db.query(countQueryString, queryParams);
     const totalItems = parseInt(countRows[0].count, 10);
 
     // Construct Main Data Query
     let mainQueryString = mainQuerySelect + whereClause + ' ORDER BY d.upload_timestamp DESC';
-    const mainQueryParams = [...queryParams]; // Clone queryParams for the main query
+    const mainQueryParams = [...queryParams]; // Moved this line up
+    console.log('[DEBUG] Document.findAll - Main Query (before limit/offset):', mainQueryString);
+    console.log('[DEBUG] Document.findAll - Main Params (before limit/offset):', mainQueryParams);
 
     if (limit) {
       mainQueryString += ` LIMIT $${paramCount}`;

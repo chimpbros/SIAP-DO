@@ -18,7 +18,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
     if (document) {
       setDispositionKeterangan(document.isi_disposisi || '');
       // Assuming document.disposition_attachment_path holds the URL or identifier
-      setDispositionFilePreview(document.disposition_attachment_path || ''); 
+      setDispositionFilePreview(document.disposition_attachment_path || '');
 
       setFollowUpKeterangan(document.response_keterangan || '');
       setFollowUpFilePreview(document.response_storage_path || '');

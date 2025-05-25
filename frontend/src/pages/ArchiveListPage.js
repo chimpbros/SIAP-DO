@@ -31,22 +31,24 @@ const ArchiveListPage = () => {
     setLoading(true);
     console.log(`Fetching documents for page: ${page}, search: ${searchTerm}, month: ${filterMonth}, year: ${filterYear}`);
     try {
-      const params = { 
-        page, 
-        limit: 10, 
-        searchTerm: searchTerm || undefined, 
-        month: filterMonth || undefined, 
-        year: filterYear || undefined 
+      const params = {
+        page,
+        limit: 10,
+        searchTerm: searchTerm || undefined,
+        month: filterMonth || undefined,
+        year: filterYear || undefined
       };
       const data = await DocumentService.listDocuments(params);
       console.log("Fetched documents data:", JSON.stringify(data.documents, null, 2)); // Log the fetched data with pretty printing
       setDocuments(data.documents);
       setCurrentPage(data.currentPage); // Ensure currentPage is updated from response
       setTotalPages(data.totalPages);
+      return data.documents; // Return the fetched documents
     } catch (error) {
       console.error("Failed to fetch documents", error);
       alert(error.message || "Gagal memuat dokumen.");
-      setDocuments([]); 
+      setDocuments([]);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -175,8 +177,16 @@ const ArchiveListPage = () => {
     setShowDispositionModal(false);
   };
 
-  const handleDispositionActionComplete = () => {
-    fetchDocuments(currentPage); // Refresh data after modal action
+  const handleDispositionActionComplete = async () => { // Make it async
+    const updatedDocuments = await fetchDocuments(currentPage); // Fetch and await
+    if (updatedDocuments && selectedDocumentForDisposition) {
+      const freshDocument = updatedDocuments.find(
+        doc => doc.document_id === selectedDocumentForDisposition.document_id
+      );
+      if (freshDocument) {
+        setSelectedDocumentForDisposition(freshDocument); // Update with fresh data
+      }
+    }
     closeDispositionModal();
   };
   
