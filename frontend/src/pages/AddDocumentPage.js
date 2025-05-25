@@ -19,7 +19,15 @@ const AddDocumentPage = () => {
   const navigate = useNavigate(); // Initialized navigate
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    setFormData(prevFormData => {
+      const newFormData = { ...prevFormData, [id]: value };
+      // If tipe_surat changes to 'Surat Keluar', clear pengirim
+      if (id === 'tipe_surat' && value === 'Surat Keluar') {
+        newFormData.pengirim = '';
+      }
+      return newFormData;
+    });
   };
 
   // Removed handleResponseFileChange as response fields are removed from this form
@@ -54,9 +62,9 @@ const AddDocumentPage = () => {
       setError('Tipe Surat, Jenis Surat, Nomor Surat, dan Perihal wajib diisi.');
       return;
     }
-    // Pengirim is now required for all types as per the new design's fields
-    if (!formData.pengirim) {
-        setError('Pengirim wajib diisi.');
+    // Pengirim is required only if tipe_surat is not 'Surat Keluar'
+    if (formData.tipe_surat !== 'Surat Keluar' && !formData.pengirim) {
+        setError('Pengirim wajib diisi untuk Surat Masuk.');
         return;
     }
     // Removed validation for isi_disposisi, response_document, response_keterangan
@@ -137,10 +145,12 @@ const AddDocumentPage = () => {
             <textarea id="perihal" value={formData.perihal} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary min-h-[80px]" placeholder=""></textarea>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="pengirim">Pengirim</label>
-            <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary" placeholder="" />
-          </div>
+          {formData.tipe_surat !== 'Surat Keluar' && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="pengirim">Pengirim</label>
+              <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary" placeholder="" />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="lampiran_surat">Lampiran (PDF, PNG, JPG)</label>

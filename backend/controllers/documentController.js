@@ -37,7 +37,8 @@ exports.addDocument = async (req, res) => {
     return res.status(400).json({ message: 'Lampiran surat wajib diisi.' });
   }
 
-  if (!tipe_surat || !jenis_surat || !nomor_surat || !perihal || !pengirim) { // Added pengirim to validation
+  // Validate required fields, 'pengirim' is optional for 'Surat Keluar'
+  if (!tipe_surat || !jenis_surat || !nomor_surat || !perihal || (tipe_surat !== 'Surat Keluar' && !pengirim)) {
     // Clean up uploaded files if validation fails early
     if (originalDocument) fs.unlinkSync(originalDocument.path);
     // if (responseDocument) fs.unlinkSync(responseDocument.path); // No responseDocument here
