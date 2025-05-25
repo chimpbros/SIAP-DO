@@ -13,6 +13,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler, // Import Filler plugin
 } from 'chart.js';
 
 ChartJS.register(
@@ -22,7 +23,8 @@ ChartJS.register(
   LineElement,  // Added for Line chart
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler // Register Filler plugin
 );
 
 const DashboardPage = () => {
@@ -114,8 +116,7 @@ const DashboardPage = () => {
           ) : recentDocuments.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-border-color">
-                <thead className="bg-gray-50"> {/* Consider theming this bg too */}
-                  <tr>
+                <thead className="bg-gray-50"> {/* Consider theming this bg too */}<tr>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">No. Surat</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>

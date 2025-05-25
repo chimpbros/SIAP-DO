@@ -30,7 +30,6 @@ const ArchiveListPage = () => {
 
   const fetchDocuments = useCallback(async (page = 1) => {
     setLoading(true);
-    console.log(`Fetching documents for page: ${page}, search: ${searchTerm}, month: ${filterMonth}, year: ${filterYear}`);
     try {
       const params = {
         page,
@@ -40,7 +39,6 @@ const ArchiveListPage = () => {
         year: filterYear || undefined
       };
       const data = await DocumentService.listDocuments(params);
-      console.log("Fetched documents data:", JSON.stringify(data.documents, null, 2)); // Log the fetched data with pretty printing
       setDocuments(data.documents);
       setCurrentPage(data.currentPage); // Ensure currentPage is updated from response
       setTotalPages(data.totalPages);
