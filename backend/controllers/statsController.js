@@ -100,27 +100,28 @@ exports.getMonthlyUploadStats = async (req, res) => {
 
 exports.getDashboardSummary = async (req, res) => {
   const userIsAdmin = req.user.isAdmin;
-  const userId = req.user.id; // Assuming user ID is available for non-admin queries if needed for specific user data
   const currentMonthYear = getCurrentMonthYearString();
 
   try {
+    const nonAdminCondition = "jenis_surat != 'STR'";
+    const nonAdminParam = 'STR';
+
     let totalDocumentsQuery = 'SELECT COUNT(*) FROM documents';
     let suratMasukQuery = "SELECT COUNT(*) FROM documents WHERE tipe_surat = 'Surat Masuk'";
     let suratKeluarQuery = "SELECT COUNT(*) FROM documents WHERE tipe_surat = 'Surat Keluar'";
     let countThisMonthQuery = 'SELECT COUNT(*) FROM documents WHERE month_year = $1';
-    
-    const queryParamsThisMonth = [currentMonthYear];
-    const nonAdminCondition = "jenis_surat != 'STR'";
-    const nonAdminParam = 'STR';
+
+    const totalDocumentsParams = [];
+    const suratMasukParams = [];
+    const suratKeluarParams = [];
+    const countThisMonthParams = [currentMonthYear];
 
     if (!userIsAdmin) {
       totalDocumentsQuery += ` WHERE ${nonAdminCondition}`;
       suratMasukQuery += ` AND ${nonAdminCondition}`;
       suratKeluarQuery += ` AND ${nonAdminCondition}`;
-      countThisMonthQuery += ` AND ${nonAdminCondition}`;
-      // queryParamsThisMonth.push(nonAdminParam); // This would be $2 if used directly
-                                                // For countThisMonthQuery, it's simpler to append the condition string
-                                                // If using parameterized queries for all, adjust accordingly.
+      countThisMonthQuery += ' AND jenis_surat != $2'; // Use $2 for the second parameter
+      countThisMonthParams.push(nonAdminParam); // Add parameter for non-admin condition
     }
 
     // Execute queries in parallel
@@ -130,29 +131,17 @@ exports.getDashboardSummary = async (req, res) => {
       suratKeluarResult,
       countThisMonthResult
     ] = await Promise.all([
-      db.query(totalDocumentsQuery),
-      db.query(suratMasukQuery),
-      db.query(suratKeluarQuery),
-      db.query(countThisMonthQuery, userIsAdmin ? [currentMonthYear] : [currentMonthYear, nonAdminParam]) // Adjust params for countThisMonth if STR is $2
-      // Corrected: if not admin, countThisMonthQuery becomes '... WHERE month_year = $1 AND jenis_surat != $2'
-      // So the params should be [currentMonthYear, nonAdminParam]
+      db.query(totalDocumentsQuery, totalDocumentsParams),
+      db.query(suratMasukQuery, suratMasukParams),
+      db.query(suratKeluarQuery, suratKeluarParams),
+      db.query(countThisMonthQuery, countThisMonthParams) // Use the correctly constructed params
     ]);
-    
-    // If not admin, the countThisMonthQuery needs to be adjusted for the parameter index
-    let finalCountThisMonthQuery = 'SELECT COUNT(*) FROM documents WHERE month_year = $1';
-    const finalCountThisMonthParams = [currentMonthYear];
-    if (!userIsAdmin) {
-        finalCountThisMonthQuery += ' AND jenis_surat != $2';
-        finalCountThisMonthParams.push(nonAdminParam);
-    }
-    const finalCountThisMonthResult = await db.query(finalCountThisMonthQuery, finalCountThisMonthParams);
-
 
     res.status(200).json({
       totalDocuments: parseInt(totalDocumentsResult.rows[0].count, 10),
       suratMasukCount: parseInt(suratMasukResult.rows[0].count, 10),
       suratKeluarCount: parseInt(suratKeluarResult.rows[0].count, 10),
-      countThisMonth: parseInt(finalCountThisMonthResult.rows[0].count, 10)
+      countThisMonth: parseInt(countThisMonthResult.rows[0].count, 10) // Use the result from the parallel query
     });
 
   } catch (error) {
