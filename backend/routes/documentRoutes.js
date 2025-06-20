@@ -24,6 +24,7 @@ router.get('/recent', protect, documentController.getRecentDocuments);
 router.get('/export/excel', protect, documentController.exportDocumentsToExcel);
 
 // GET /api/documents/:documentId/preview - Preview a specific document attachment
+// Accepts optional query parameter 'fileType' ('original', 'disposition', 'response')
 router.get('/:documentId/preview', protect, documentController.previewDocument);
 
 // GET /api/documents/:documentId/download - Download a specific document attachment

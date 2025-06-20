@@ -35,15 +35,15 @@ const DocumentService = {
     return `${api.defaults.baseURL}/documents/${documentId}/preview`; 
   },
 
-  getDocumentAsBlob: async (documentId, actionType = 'preview') => { // actionType can be 'preview' or 'download'
+  getDocumentAsBlob: async (documentId, actionType = 'preview', fileType = 'original') => { // actionType can be 'preview' or 'download', fileType can be 'original', 'disposition', 'response'
     try {
-      const response = await api.get(`/documents/${documentId}/${actionType}`, {
+      const response = await api.get(`/documents/${documentId}/${actionType}?fileType=${fileType}`, {
         responseType: 'blob', // Important for file data
       });
       return response.data; // This will be a Blob
     } catch (error) {
-      console.error(`Error fetching document for ${actionType}:`, error);
-      throw error.response?.data || { message: `Failed to fetch document for ${actionType}.` };
+      console.error(`Error fetching document for ${actionType} (${fileType}):`, error);
+      throw error.response?.data || { message: `Failed to fetch document for ${actionType} (${fileType}).` };
     }
   },
   

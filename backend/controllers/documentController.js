@@ -155,13 +155,54 @@ exports.previewDocument = async (req, res) => {
       return res.status(403).json({ message: 'Anda tidak memiliki izin untuk melihat dokumen STR.' });
     }
 
-    // Determine which file path to use for preview (original or response)
-    const filePathToPreview = path.join('/app/uploads', path.basename(document.storage_path)); // Always use original path for preview
+    // Determine which file path to use for preview based on fileType query parameter
+    const fileType = req.query.fileType || 'original'; // Default to 'original'
 
-    if (fs.existsSync(filePathToPreview)) {
-      res.sendFile(filePathToPreview);
+    console.log(`[DEBUG] previewDocument - Received fileType: ${fileType}`);
+
+    let filePathToPreview = null;
+    let originalFilename = null; // To set Content-Disposition header if needed
+
+    switch (fileType) {
+      case 'disposition':
+        filePathToPreview = document.disposition_attachment_path;
+        originalFilename = document.disposition_original_filename;
+        break;
+      case 'response':
+        filePathToPreview = document.response_storage_path;
+        originalFilename = document.response_original_filename;
+        break;
+      case 'original':
+      default:
+        filePathToPreview = document.storage_path;
+        originalFilename = document.original_filename;
+        break;
+    }
+
+    console.log(`[DEBUG] previewDocument - Selected filePathToPreview from DB: ${filePathToPreview}`);
+    console.log(`[DEBUG] previewDocument - Selected originalFilename from DB: ${originalFilename}`);
+
+
+    if (!filePathToPreview) {
+        console.error(`[DEBUG] previewDocument - File path is null for fileType: ${fileType}`);
+        return res.status(404).json({ message: `File ${fileType} tidak ditemukan untuk dokumen ini.` });
+    }
+
+    // Construct the absolute path on the server's filesystem
+    // Assuming the paths stored in the DB are relative to /app/uploads
+    const absoluteFilePath = path.join('/app/uploads', path.basename(filePathToPreview));
+
+    console.log(`[DEBUG] previewDocument - Constructed absoluteFilePath: ${absoluteFilePath}`);
+    console.log(`[DEBUG] previewDocument - File exists at absoluteFilePath: ${fs.existsSync(absoluteFilePath)}`);
+
+
+    if (fs.existsSync(absoluteFilePath)) {
+      // Set Content-Disposition to inline for preview
+      res.setHeader('Content-Disposition', `inline; filename="${originalFilename || 'preview'}"`);
+      res.sendFile(absoluteFilePath);
     } else {
-      res.status(404).json({ message: 'File lampiran tidak ditemukan di server.' });
+      console.error(`[DEBUG] previewDocument - File not found on filesystem: ${absoluteFilePath}`);
+      res.status(404).json({ message: `File lampiran (${fileType}) tidak ditemukan di server.` });
     }
   } catch (error) {
     console.error('Error previewing document:', error);

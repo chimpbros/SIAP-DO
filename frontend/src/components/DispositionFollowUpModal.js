@@ -13,6 +13,7 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const previewUrlRef = React.useRef(null); // Ref to store temporary URL
 
   useEffect(() => {
     if (document) {
@@ -31,7 +32,44 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
       setFollowUpFile(null);
       setFollowUpFilePreview('');
     }
-  }, [document]);
+
+    // Cleanup function to revoke object URLs
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, [document]); // Add document as dependency
+
+  const handlePreviewExistingFile = async (fileType) => {
+    console.log(`[DEBUG] handlePreviewExistingFile called for fileType: ${fileType}`); // Add console log here
+    if (!document || (!document.disposition_attachment_path && fileType === 'disposition') || (!document.response_storage_path && fileType === 'response')) {
+      setError(`File ${fileType} tidak ditemukan.`);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      // Revoke previous URL if exists
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+
+      const blob = await DocumentService.getDocumentAsBlob(document.document_id, 'preview', fileType);
+      const fileURL = URL.createObjectURL(blob);
+      previewUrlRef.current = fileURL; // Store the new URL
+      window.open(fileURL, '_blank');
+    } catch (err) {
+      console.error(`Error previewing ${fileType} file:`, err);
+      setError(err.message || `Gagal memuat pratinjau file ${fileType}.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
@@ -175,7 +213,18 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
                   </button>
                 )}
               </div>
-              {dispositionFilePreview && !dispositionFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={dispositionFilePreview.startsWith('/app/uploads/') ? dispositionFilePreview : `/app${dispositionFilePreview}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.disposition_attachment_filename || 'Lihat File'}</a></p>}
+              {dispositionFilePreview && !dispositionFile && (
+                <p className="text-xs text-text-light mt-1">
+                  File terlampir:
+                  <button
+                    type="button"
+                    onClick={() => handlePreviewExistingFile('disposition')}
+                    className="text-primary hover:underline ml-1"
+                  >
+                    {document.disposition_original_filename || 'Lihat File'}
+                  </button>
+                </p>
+              )}
               {dispositionFile && <p className="text-xs text-text-light mt-1">File baru: {dispositionFile.name}</p>}
             </div>
           </div>
@@ -212,7 +261,18 @@ const DispositionFollowUpModal = ({ document, onClose, onActionComplete }) => {
                   </button>
                 )}
               </div>
-              {followUpFilePreview && !followUpFile && <p className="text-xs text-text-light mt-1">File terlampir: <a href={followUpFilePreview.startsWith('/app/uploads/') ? followUpFilePreview : `/app${followUpFilePreview}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{document.response_original_filename || 'Lihat File'}</a></p>}
+              {followUpFilePreview && !followUpFile && (
+                 <p className="text-xs text-text-light mt-1">
+                  File terlampir:
+                  <button
+                    type="button"
+                    onClick={() => handlePreviewExistingFile('response')}
+                    className="text-primary hover:underline ml-1"
+                  >
+                    {document.response_original_filename || 'Lihat File'}
+                  </button>
+                </p>
+              )}
               {followUpFile && <p className="text-xs text-text-light mt-1">File baru: {followUpFile.name}</p>}
             </div>
           </div>
