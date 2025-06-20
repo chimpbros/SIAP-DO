@@ -292,7 +292,7 @@ const Document = {
       console.log('UPDATE query result rows:', rows);
       return rows[0]; // Return the updated document
     } catch (error) {
-      console.error('Error updating document by ID:', error);
+      console.error('Error updating document by ID. PG Code:', error.code, 'Message:', error.message, 'Detail:', error.detail, 'Full Error:', error);
       throw error;
     }
   },

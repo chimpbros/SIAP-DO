@@ -5,6 +5,16 @@ const ExcelJS = require('exceljs');
 
 const { uploadFields } = require('../middleware/uploadMiddleware'); // Assuming uploadMiddleware exports as { uploadFields }
 
+const truncateFilename = (filename, maxLength = 200) => {
+  const ext = path.extname(filename);
+  const nameWithoutExt = path.basename(filename, ext);
+  if (nameWithoutExt.length > maxLength) {
+    const truncatedName = nameWithoutExt.substring(0, maxLength);
+    return truncatedName + ext;
+  }
+  return filename;
+};
+
 // Helper to create month_year string
 const getCurrentMonthYear = () => {
   const now = new Date();
@@ -364,7 +374,8 @@ exports.addResponse = async (req, res) => {
     if (responseDocument) {
         // Store paths relative to the expected mount point inside the Docker container
         updateData.response_storage_path = `/uploads/${path.basename(responseDocument.path)}`;
-        updateData.response_original_filename = responseDocument.originalname;
+        const truncatedResponseFilename = truncateFilename(responseDocument.originalname);
+        updateData.response_original_filename = truncatedResponseFilename;
         updateData.response_upload_timestamp = new Date();
     } else if (!response_keterangan || response_keterangan.trim() === '') {
         // If no file and no keterangan, maybe don't mark as responded?
@@ -514,7 +525,7 @@ exports.updateDispositionAndFollowUp = async (req, res) => {
         if (fs.existsSync(oldDispPath)) fs.unlinkSync(oldDispPath);
       }
       updateData.disposition_attachment_path = `/uploads/${path.basename(dispositionAttachmentFile.path)}`;
-      updateData.disposition_original_filename = dispositionAttachmentFile.originalname;
+      updateData.disposition_original_filename = truncateFilename(dispositionAttachmentFile.originalname);
     } else if (deleteDispositionAttachment === 'true' && document.disposition_attachment_path) {
       const oldDispPath = path.join('/app/uploads', path.basename(document.disposition_attachment_path));
       if (fs.existsSync(oldDispPath)) fs.unlinkSync(oldDispPath);
@@ -534,7 +545,7 @@ exports.updateDispositionAndFollowUp = async (req, res) => {
         if (fs.existsSync(oldFollowUpPath)) fs.unlinkSync(oldFollowUpPath);
       }
       updateData.response_storage_path = `/uploads/${path.basename(followUpAttachmentFile.path)}`;
-      updateData.response_original_filename = followUpAttachmentFile.originalname;
+      updateData.response_original_filename = truncateFilename(followUpAttachmentFile.originalname);
       updateData.response_upload_timestamp = new Date();
     } else if (deleteResponseDocument === 'true' && document.response_storage_path) {
       const oldFollowUpPath = path.join('/app/uploads', path.basename(document.response_storage_path));
