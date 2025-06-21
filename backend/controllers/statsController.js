@@ -97,3 +97,55 @@ exports.getMonthlyUploadStats = async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
 };
+
+exports.getDashboardSummary = async (req, res) => {
+  const userIsAdmin = req.user.isAdmin;
+  const currentMonthYear = getCurrentMonthYearString();
+
+  try {
+    const nonAdminCondition = "jenis_surat != 'STR'";
+    const nonAdminParam = 'STR';
+
+    let totalDocumentsQuery = 'SELECT COUNT(*) FROM documents';
+    let suratMasukQuery = "SELECT COUNT(*) FROM documents WHERE tipe_surat = 'Surat Masuk'";
+    let suratKeluarQuery = "SELECT COUNT(*) FROM documents WHERE tipe_surat = 'Surat Keluar'";
+    let countThisMonthQuery = 'SELECT COUNT(*) FROM documents WHERE month_year = $1';
+
+    const totalDocumentsParams = [];
+    const suratMasukParams = [];
+    const suratKeluarParams = [];
+    const countThisMonthParams = [currentMonthYear];
+
+    if (!userIsAdmin) {
+      totalDocumentsQuery += ` WHERE ${nonAdminCondition}`;
+      suratMasukQuery += ` AND ${nonAdminCondition}`;
+      suratKeluarQuery += ` AND ${nonAdminCondition}`;
+      countThisMonthQuery += ' AND jenis_surat != $2'; // Use $2 for the second parameter
+      countThisMonthParams.push(nonAdminParam); // Add parameter for non-admin condition
+    }
+
+    // Execute queries in parallel
+    const [
+      totalDocumentsResult,
+      suratMasukResult,
+      suratKeluarResult,
+      countThisMonthResult
+    ] = await Promise.all([
+      db.query(totalDocumentsQuery, totalDocumentsParams),
+      db.query(suratMasukQuery, suratMasukParams),
+      db.query(suratKeluarQuery, suratKeluarParams),
+      db.query(countThisMonthQuery, countThisMonthParams) // Use the correctly constructed params
+    ]);
+
+    res.status(200).json({
+      totalDocuments: parseInt(totalDocumentsResult.rows[0].count, 10),
+      suratMasukCount: parseInt(suratMasukResult.rows[0].count, 10),
+      suratKeluarCount: parseInt(suratKeluarResult.rows[0].count, 10),
+      countThisMonth: parseInt(countThisMonthResult.rows[0].count, 10) // Use the result from the parallel query
+    });
+
+  } catch (error) {
+    console.error('Error getting dashboard summary stats:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengambil ringkasan statistik.' });
+  }
+};

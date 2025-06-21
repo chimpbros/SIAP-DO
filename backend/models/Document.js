@@ -16,15 +16,18 @@ const Document = {
     response_original_filename, // New: Response document filename
     response_upload_timestamp, // New: Response upload timestamp
     response_keterangan, // New: Response description
-    has_responded // New: Has responded flag
+    has_responded, // New: Has responded flag
+    disposition_attachment_path, // New field for disposition attachment
+    disposition_original_filename // New field for disposition attachment original filename
   }) {
     const query = `
       INSERT INTO documents (
         tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi,
         storage_path, original_filename, uploader_user_id, month_year,
-        response_storage_path, response_original_filename, response_upload_timestamp, response_keterangan, has_responded
+        response_storage_path, response_original_filename, response_upload_timestamp, response_keterangan, has_responded,
+        disposition_attachment_path, disposition_original_filename
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *;
     `;
     const values = [
@@ -42,7 +45,9 @@ const Document = {
       response_original_filename,
       response_upload_timestamp,
       response_keterangan,
-      has_responded
+      has_responded,
+      disposition_attachment_path,
+      disposition_original_filename
     ];
 
     try {
@@ -72,13 +77,14 @@ const Document = {
 
   async findAll({ searchTerm, filterMonth, filterYear, userIsAdmin, limit, offset }) {
     let mainQuerySelect = `
-      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
-             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
-             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
-             d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan, d.has_responded
-      FROM documents d
-      JOIN users u ON d.uploader_user_id = u.user_id
-    `;
+      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim, d.isi_disposisi,
+               TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+               u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
+               d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan, d.has_responded,
+               d.disposition_attachment_path, d.disposition_original_filename
+       FROM documents d
+       JOIN users u ON d.uploader_user_id = u.user_id
+     `;
     const conditions = [];
     const queryParams = []; // Parameters for the WHERE clause
     let paramCount = 1;
@@ -108,12 +114,16 @@ const Document = {
 
     // Construct Count Query
     const countQueryString = `SELECT COUNT(*) FROM documents d JOIN users u ON d.uploader_user_id = u.user_id ${whereClause}`;
+    console.log('[DEBUG] Document.findAll - Count Query:', countQueryString);
+    console.log('[DEBUG] Document.findAll - Count Params:', queryParams);
     const { rows: countRows } = await db.query(countQueryString, queryParams);
     const totalItems = parseInt(countRows[0].count, 10);
 
     // Construct Main Data Query
     let mainQueryString = mainQuerySelect + whereClause + ' ORDER BY d.upload_timestamp DESC';
-    const mainQueryParams = [...queryParams]; // Clone queryParams for the main query
+    const mainQueryParams = [...queryParams]; // Moved this line up
+    console.log('[DEBUG] Document.findAll - Main Query (before limit/offset):', mainQueryString);
+    console.log('[DEBUG] Document.findAll - Main Params (before limit/offset):', mainQueryParams);
 
     if (limit) {
       mainQueryString += ` LIMIT $${paramCount}`;
@@ -140,7 +150,8 @@ const Document = {
     let baseQuery = `
       SELECT d.nomor_surat, d.tipe_surat, d.jenis_surat, d.perihal, d.pengirim, d.isi_disposisi,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as tanggal_upload,
-             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename
+             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename,
+             d.disposition_attachment_path, d.disposition_original_filename
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
     `;
@@ -187,7 +198,8 @@ const Document = {
     let baseQuery = `
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
-             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path
+             u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
+             d.disposition_attachment_path, d.disposition_original_filename
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
     `;
@@ -280,7 +292,7 @@ const Document = {
       console.log('UPDATE query result rows:', rows);
       return rows[0]; // Return the updated document
     } catch (error) {
-      console.error('Error updating document by ID:', error);
+      console.error('Error updating document by ID. PG Code:', error.code, 'Message:', error.message, 'Detail:', error.detail, 'Full Error:', error);
       throw error;
     }
   },
@@ -310,6 +322,43 @@ const Document = {
       return rows[0]; // Return the first matching document
     } catch (error) {
       console.error('Error finding document by response file path partial:', error);
+      throw error;
+    }
+  },
+
+  async findRecent({ limit, userIsAdmin }) {
+    let queryText = `
+      SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
+             TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+             u.nama as uploader_nama
+      FROM documents d
+      JOIN users u ON d.uploader_user_id = u.user_id
+    `;
+    const queryParams = [];
+    let paramCount = 1;
+
+    const conditions = [];
+    if (!userIsAdmin) {
+      conditions.push(`d.jenis_surat != 'STR'`);
+    }
+
+    if (conditions.length > 0) {
+      queryText += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    queryText += ' ORDER BY d.upload_timestamp DESC';
+
+    if (limit) {
+      queryText += ` LIMIT $${paramCount}`;
+      queryParams.push(limit);
+      // paramCount++; // Not needed if it's the last param
+    }
+    
+    try {
+      const { rows } = await db.query(queryText, queryParams);
+      return rows;
+    } catch (error) {
+      console.error('Error finding recent documents:', error);
       throw error;
     }
   }

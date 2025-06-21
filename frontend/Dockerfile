@@ -24,6 +24,10 @@ RUN npm run build
 # Stage 2: Serve the built application with Nginx
 FROM nginx:1.25-alpine
 
+# Set the API URL environment variable for the serving stage
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+
 # Copy the build output from the build stage to Nginx's web server directory
 COPY --from=build /app/build /usr/share/nginx/html
 

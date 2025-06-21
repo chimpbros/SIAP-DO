@@ -13,4 +13,7 @@ router.get('/docs/count-current-month', statsController.countDocumentsThisMonth)
 // GET /api/stats/docs/monthly-uploads - Monthly upload statistics for chart
 router.get('/docs/monthly-uploads', statsController.getMonthlyUploadStats);
 
+// GET /api/stats/summary - Dashboard summary statistics
+router.get('/summary', statsController.getDashboardSummary);
+
 module.exports = router;

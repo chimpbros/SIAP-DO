@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // useNavigate removed
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 // Navbar is now in MainLayout
 import DocumentService from '../services/documentService';
 
@@ -10,36 +10,27 @@ const AddDocumentPage = () => {
     nomor_surat: '',
     perihal: '',
     pengirim: '',
-    isi_disposisi: '',
-    response_document: null,
-    response_keterangan: '',
+    // Removed: isi_disposisi, response_document, response_keterangan
   });
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [archiveWithoutResponse, setArchiveWithoutResponse] = useState(false);
-  // const navigate = useNavigate(); // Removed
+  // const [archiveWithoutResponse, setArchiveWithoutResponse] = useState(false); // This logic will be removed or re-evaluated
+  const navigate = useNavigate(); // Initialized navigate
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    setFormData(prevFormData => {
+      const newFormData = { ...prevFormData, [id]: value };
+      // If tipe_surat changes to 'Surat Keluar', clear pengirim
+      if (id === 'tipe_surat' && value === 'Surat Keluar') {
+        newFormData.pengirim = '';
+      }
+      return newFormData;
+    });
   };
 
-  const handleResponseFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      const maxSize = 1024 * 1024 * 2; // 2 MB
-      if (selectedFile.size > maxSize) {
-        setError(`Ukuran file tidak boleh melebihi 2 MB. Ukuran file Anda: ${(selectedFile.size / 1024).toFixed(2)} KB`);
-        setFormData({ ...formData, response_document: null });
-        e.target.value = null;
-        return;
-      }
-      setFormData({ ...formData, response_document: selectedFile });
-      setError('');
-    } else {
-      setFormData({ ...formData, response_document: null });
-    }
-  };
+  // Removed handleResponseFileChange as response fields are removed from this form
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -63,11 +54,6 @@ const AddDocumentPage = () => {
     setError('');
     setSuccess('');
 
-    // Do NOT reset response fields if archiveWithoutResponse is true.
-    // The backend logic in addDocument will handle the has_responded flag correctly
-    // based on whether responseDocument or response_keterangan are provided,
-    // regardless of the archiveWithoutResponse flag.
-
     if (!file) {
       setError('Lampiran surat wajib diisi.');
       return;
@@ -76,14 +62,12 @@ const AddDocumentPage = () => {
       setError('Tipe Surat, Jenis Surat, Nomor Surat, dan Perihal wajib diisi.');
       return;
     }
-    if (formData.tipe_surat === 'Surat Masuk' && (!archiveWithoutResponse) && (!formData.pengirim || !formData.isi_disposisi)) {
-      setError('Untuk Surat Masuk, Pengirim dan Isi Disposisi wajib diisi.');
-      return;
+    // Pengirim is required only if tipe_surat is not 'Surat Keluar'
+    if (formData.tipe_surat !== 'Surat Keluar' && !formData.pengirim) {
+        setError('Pengirim wajib diisi untuk Surat Masuk.');
+        return;
     }
-    if (formData.tipe_surat === 'Surat Masuk' && (!archiveWithoutResponse) && (!formData.response_document || !formData.response_keterangan)) {
-      setError('Untuk Surat Masuk yang memerlukan respons, Lampiran Respons dan Keterangan Respons wajib diisi.');
-      return;
-    }
+    // Removed validation for isi_disposisi, response_document, response_keterangan
 
     const data = new FormData();
     data.append('originalDocument', file);
@@ -91,31 +75,32 @@ const AddDocumentPage = () => {
     data.append('jenis_surat', formData.jenis_surat);
     data.append('nomor_surat', formData.nomor_surat);
     data.append('perihal', formData.perihal);
-    if (formData.tipe_surat === 'Surat Masuk') { // Modified condition
-      data.append('pengirim', formData.pengirim);
-      data.append('isi_disposisi', formData.isi_disposisi);
-      // Only append responseDocument and response_keterangan if not archiving without response
-      if (!archiveWithoutResponse) {
-        data.append('responseDocument', formData.response_document);
-        data.append('response_keterangan', formData.response_keterangan);
-      }
-      data.append('archive_without_response', archiveWithoutResponse); // Always append for Surat Masuk
-    }
+    data.append('pengirim', formData.pengirim); // Pengirim is now always sent
+
+    // Backend will need to be adjusted to not expect isi_disposisi, responseDocument, etc.,
+    // or handle their absence gracefully for this simplified form.
+    // For now, we assume the backend's addDocument will be updated.
     
     console.log('Add document attempt with:', Object.fromEntries(data.entries()));
     try {
       const response = await DocumentService.addDocument(data);
       setSuccess(response.message || 'Dokumen berhasil ditambahkan!');
-      // Reset form
-      setFormData({ tipe_surat: 'Surat Masuk', jenis_surat: 'Biasa', nomor_surat: '', perihal: '', pengirim: '', isi_disposisi: '' });
+      // Reset form to initial state
+      setFormData({
+        tipe_surat: 'Surat Masuk',
+        jenis_surat: 'Biasa',
+        nomor_surat: '',
+        perihal: '',
+        pengirim: '',
+      });
       setFile(null);
-      if (document.getElementById('lampiran_surat')) { // Check if element exists before trying to clear
-        document.getElementById('lampiran_surat').value = null; 
+      // Clear the file input visually
+      const fileInput = document.getElementById('lampiran_surat');
+      if (fileInput) {
+        fileInput.value = null;
       }
       setTimeout(() => {
         setSuccess('');
-        // Optionally navigate or stay on page
-        // navigate('/archive'); // If navigation is desired, re-add useNavigate and uncomment
       }, 3000);
     } catch (err) {
       setError(err.message || 'Gagal menambahkan dokumen. Silakan coba lagi.');
@@ -123,25 +108,24 @@ const AddDocumentPage = () => {
   };
 
   return (
-    // Navbar removed, container and padding are now handled by MainLayout's <main> tag
     <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tambah Dokumen Baru</h1>
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm mb-4 text-center">{success}</p>}
+      <h1 className="text-2xl font-semibold text-text-primary mb-6 text-center">Tambah Surat</h1>
+      <div className="bg-content-bg p-8 rounded-xl shadow-lg w-full max-w-xl mx-auto"> {/* Adjusted max-width for a slightly narrower form like design */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="text-danger text-sm text-center py-2 bg-red-50 rounded-md">{error}</p>}
+          {success && <p className="text-success text-sm text-center py-2 bg-green-50 rounded-md">{success}</p>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4"> {/* Adjusted gap */}
             <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="tipe_surat">Tipe Surat</label>
-              <select id="tipe_surat" value={formData.tipe_surat} onChange={handleChange} className="input-field">
+              <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="tipe_surat">Tipe Surat</label>
+              <select id="tipe_surat" value={formData.tipe_surat} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary">
                 <option value="Surat Masuk">Surat Masuk</option>
                 <option value="Surat Keluar">Surat Keluar</option>
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="jenis_surat">Jenis Surat</label>
-              <select id="jenis_surat" value={formData.jenis_surat} onChange={handleChange} className="input-field">
+              <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="jenis_surat">Jenis Surat</label>
+              <select id="jenis_surat" value={formData.jenis_surat} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary">
                 <option value="ST">ST (Surat Telegram)</option>
                 <option value="STR">STR (Surat Telegram Rahasia)</option>
                 <option value="Biasa">Biasa</option>
@@ -151,100 +135,57 @@ const AddDocumentPage = () => {
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nomor_surat">Nomor Surat</label>
-            <input type="text" id="nomor_surat" value={formData.nomor_surat} onChange={handleChange} className="input-field" placeholder="Nomor Surat" />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="nomor_surat">Nomor Surat</label>
+            <input type="text" id="nomor_surat" value={formData.nomor_surat} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary" placeholder="" />
           </div>
 
-          <div className="mt-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="perihal">Perihal</label>
-            <textarea id="perihal" value={formData.perihal} onChange={handleChange} className="input-field h-24" placeholder="Perihal Dokumen"></textarea>
-          </div>
-
-          {formData.tipe_surat === 'Surat Masuk' && (
-            <>
-              <div className="mt-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pengirim">Pengirim</label>
-                <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field" placeholder="Nama Pengirim" />
-              </div>
-              <div className="mt-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="isi_disposisi">Isi Disposisi</label>
-                <textarea id="isi_disposisi" value={formData.isi_disposisi} onChange={handleChange} className="input-field h-20" placeholder="Isi Disposisi"></textarea>
-              </div>
-              
-              <div className="mt-4 flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="archiveWithoutResponse" 
-                  checked={archiveWithoutResponse}
-                  onChange={(e) => setArchiveWithoutResponse(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="archiveWithoutResponse" className="ml-2 block text-sm text-gray-700">
-                  Arsipkan tanpa respons
-                </label>
-              </div>
-
-              {!archiveWithoutResponse && (
-                <>
-                  <div className="mt-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="response_document">Lampiran Respons (PDF, JPG, PNG)</label>
-                    <input 
-                      type="file" 
-                      id="response_document" 
-                      onChange={handleResponseFileChange}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="response_keterangan">Keterangan Respons</label>
-                    <textarea 
-                      id="response_keterangan" 
-                      value={formData.response_keterangan} 
-                      onChange={handleChange} 
-                      className="input-field h-20" 
-                      placeholder="Keterangan untuk respons surat"
-                    ></textarea>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-
-          <div className="mt-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="lampiran_surat">Lampiran Surat (PDF, JPG, PNG)</label>
-            <input type="file" id="lampiran_surat" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept=".pdf,.jpg,.jpeg,.png" />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="perihal">Perihal</label>
+            <textarea id="perihal" value={formData.perihal} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary min-h-[80px]" placeholder=""></textarea>
           </div>
           
-          <div className="mt-8 flex justify-end space-x-4">
-            <Link to="/archive" className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Kembali ke Daftar Arsip
-            </Link>
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Simpan Dokumen
+          {formData.tipe_surat !== 'Surat Keluar' && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="pengirim">Pengirim</label>
+              <input type="text" id="pengirim" value={formData.pengirim} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary" placeholder="" />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="lampiran_surat">Lampiran (PDF, PNG, JPG)</label>
+            <div className="mt-1">
+              <label htmlFor="lampiran_surat" className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-text-secondary font-medium py-2 px-4 rounded-lg inline-block border border-gray-100">
+                Choose file
+              </label>
+              <input
+                type="file"
+                id="lampiran_surat"
+                onChange={handleFileChange}
+                className="hidden" // Hide the default input
+                accept=".pdf,.jpg,.jpeg,.png"
+              />
+              {file && <span className="ml-3 text-sm text-text-light">{file.name}</span>}
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/archive')} // Use navigate for Batal
+              className="px-8 py-2.5 bg-gray-200 hover:bg-gray-300 text-text-primary font-medium rounded-lg transition-colors duration-150 text-sm"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-8 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-150 text-sm"
+            >
+              Simpan
             </button>
           </div>
         </form>
       </div>
-      <style>{`
-        .input-field {
-          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-          appearance: none;
-          border-radius: 0.375rem;
-          border-width: 1px;
-          border-color: #D1D5DB; /* gray-300 */
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          color: #374151; /* gray-700 */
-          line-height: 1.5;
-        }
-        .input-field:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* blue-300 with opacity */
-          border-color: #3B82F6; /* blue-500 */
-        }
-      `}</style>
     </>
   );
 };

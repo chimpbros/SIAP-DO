@@ -40,7 +40,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 
 // Serve uploaded files statically from the 'uploads' directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Moved this after API routes to avoid conflicts
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Global error handler for multer
 app.use((err, req, res, next) => {
@@ -55,6 +56,10 @@ app.use((err, req, res, next) => {
   // Everything went fine.
   next();
 });
+
+// Serve uploaded files statically from the 'uploads' directory
+// Moved this after API routes to avoid conflicts
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.listen(PORT, () => {

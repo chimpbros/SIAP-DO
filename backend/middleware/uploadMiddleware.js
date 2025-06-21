@@ -45,7 +45,8 @@ const upload = multer({
 // Export a function that can handle multiple specific file fields
 const uploadFields = upload.fields([
   { name: 'originalDocument', maxCount: 1 },
-  { name: 'responseDocument', maxCount: 1 }
+  { name: 'responseDocument', maxCount: 1 },
+  { name: 'dispositionAttachment', maxCount: 1 }
 ]);
 
 module.exports = { uploadFields };

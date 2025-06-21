@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 // Navbar is now in MainLayout
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import DocumentService from '../services/documentService';
 import AuthService from '../services/authService'; // To get current user for admin check
-import AddResponseModal from '../components/AddResponseModal'; // Import the new modal component
+import DispositionFollowUpModal from '../components/DispositionFollowUpModal'; // Import the new modal
 
 const ArchiveListPage = () => {
   const navigate = useNavigate(); // Initialize useNavigate
@@ -15,8 +15,13 @@ const ArchiveListPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [showAddResponseModal, setShowAddResponseModal] = useState(false); // State for modal visibility
-  const [selectedDocument, setSelectedDocument] = useState(null); // State to hold the document for the modal
+  // const [showAddResponseModal, setShowAddResponseModal] = useState(false); // Old modal state
+  // const [selectedDocument, setSelectedDocument] = useState(null); // Old selected doc state
+
+  const [showDispositionModal, setShowDispositionModal] = useState(false);
+  const [selectedDocumentForDisposition, setSelectedDocumentForDisposition] = useState(null);
+  // const tableContainerRef = useRef(null); // Logging removed
+
 
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
@@ -25,24 +30,24 @@ const ArchiveListPage = () => {
 
   const fetchDocuments = useCallback(async (page = 1) => {
     setLoading(true);
-    console.log(`Fetching documents for page: ${page}, search: ${searchTerm}, month: ${filterMonth}, year: ${filterYear}`);
     try {
-      const params = { 
-        page, 
-        limit: 10, 
-        searchTerm: searchTerm || undefined, 
-        month: filterMonth || undefined, 
-        year: filterYear || undefined 
+      const params = {
+        page,
+        limit: 10,
+        searchTerm: searchTerm || undefined,
+        month: filterMonth || undefined,
+        year: filterYear || undefined
       };
       const data = await DocumentService.listDocuments(params);
-      console.log("Fetched documents data:", JSON.stringify(data.documents, null, 2)); // Log the fetched data with pretty printing
       setDocuments(data.documents);
       setCurrentPage(data.currentPage); // Ensure currentPage is updated from response
       setTotalPages(data.totalPages);
+      return data.documents; // Return the fetched documents
     } catch (error) {
       console.error("Failed to fetch documents", error);
       alert(error.message || "Gagal memuat dokumen.");
-      setDocuments([]); 
+      setDocuments([]);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -53,6 +58,22 @@ const ArchiveListPage = () => {
         fetchDocuments(currentPage);
     }
   }, [user, currentPage, fetchDocuments]); // Added fetchDocuments to dependency array
+
+  // useEffect(() => { // Logging removed
+  //   const logTableWidths = () => {
+  //     if (tableContainerRef.current) {
+  //       console.log(`ArchiveListPage Table container: offsetWidth=${tableContainerRef.current.offsetWidth}, scrollWidth=${tableContainerRef.current.scrollWidth}`);
+  //     }
+  //   };
+  //   logTableWidths();
+  //   if (documents.length > 0) {
+  //       logTableWidths();
+  //   }
+  //   window.addEventListener('resize', logTableWidths);
+  //   return () => {
+  //     window.removeEventListener('resize', logTableWidths);
+  //   };
+  // }, [documents]);
 
   const handleDelete = async (documentId) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus dokumen ini?')) {
@@ -161,20 +182,27 @@ const ArchiveListPage = () => {
     }
   };
 
-  const handleAddResponse = (doc) => {
-    setSelectedDocument(doc); // Set the document for the modal
-    setShowAddResponseModal(true); // Show the modal
+  const openDispositionModal = (doc) => {
+    setSelectedDocumentForDisposition(doc);
+    setShowDispositionModal(true);
   };
 
-  const handleCloseAddResponseModal = () => {
-    setShowAddResponseModal(false); // Hide the modal
-    setSelectedDocument(null); // Clear the selected document
+  const closeDispositionModal = () => {
+    setSelectedDocumentForDisposition(null);
+    setShowDispositionModal(false);
   };
 
-  const handleResponseAdded = () => {
-    // This function is called from the modal after a successful response addition
-    // Refresh the document list
-    fetchDocuments(currentPage);
+  const handleDispositionActionComplete = async () => { // Make it async
+    const updatedDocuments = await fetchDocuments(currentPage); // Fetch and await
+    if (updatedDocuments && selectedDocumentForDisposition) {
+      const freshDocument = updatedDocuments.find(
+        doc => doc.document_id === selectedDocumentForDisposition.document_id
+      );
+      if (freshDocument) {
+        setSelectedDocumentForDisposition(freshDocument); // Update with fresh data
+      }
+    }
+    closeDispositionModal();
   };
   
   const handleExcelDownload = async () => { // Make function async
@@ -207,129 +235,138 @@ const ArchiveListPage = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Daftar Arsip Dokumen</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Arsip Surat</h1>
+          <p className="text-sm text-text-secondary">Lihat dan atur seluruh surat, tambahkan disposisi atau tindak lanjut.</p>
+        </div>
+        <div className="flex space-x-3">
+          {user?.is_admin && (
+            <button
+              onClick={handleExcelDownload}
+              className="bg-content-bg hover:bg-gray-100 text-text-primary border border-border-color font-medium py-2 px-4 rounded-lg flex items-center whitespace-nowrap" /* Added whitespace-nowrap */
+            >
+               <img src={process.env.PUBLIC_URL + '/file-export.svg'} alt="Export" className="w-5 h-5 mr-2 flex-shrink-0" /> {/* Added flex-shrink-0 to icon */}
+              Export
+            </button>
+          )}
+        </div>
+      </div>
       
-      <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label htmlFor="searchTerm" className="block text-sm font-medium text-gray-700">Cari Dokumen</label>
-            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="mt-1 input-field" placeholder="Nomor, Perihal, Pengirim..." />
+      {/* Filters section - can be refined later, for now keeping existing logic with new styling */}
+      <form onSubmit={handleSearch} className="bg-content-bg p-4 rounded-xl shadow-lg mb-6">
+        {/* Responsive grid: 1 col on xs, 2 on sm, 4 on lg */}
+        {/* Responsive grid: 1 col on xs, 2 on md, 4 on lg */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          {/* Search Term Input - Takes full width on xs, 2 cols on md, 1 on lg */}
+          <div className="md:col-span-2 lg:col-span-1">
+            <label htmlFor="searchTerm" className="block text-sm font-medium text-text-secondary mb-1">Cari Dokumen</label>
+            <input type="text" id="searchTerm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="input-field w-full" placeholder="Nomor, Perihal, Pengirim..." />
           </div>
           <div>
-            <label htmlFor="filterMonth" className="block text-sm font-medium text-gray-700">Bulan</label>
-            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="mt-1 input-field">
+            <label htmlFor="filterMonth" className="block text-sm font-medium text-text-secondary mb-1">Bulan</label>
+            <select id="filterMonth" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="input-field w-full">
               {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filterYear" className="block text-sm font-medium text-gray-700">Tahun</label>
-            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="mt-1 input-field">
+            <label htmlFor="filterYear" className="block text-sm font-medium text-text-secondary mb-1">Tahun</label>
+            <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="input-field w-full">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded h-10">Cari</button>
+          {/* Search Button - Takes full width on xs, auto on md+ */}
+          <button
+            type="submit"
+            className="bg-primary hover:bg-primary-dark text-white font-medium py-2.5 px-4 rounded-lg h-10 w-full md:w-auto self-end"
+          >
+            Cari
+          </button>
         </div>
       </form>
 
-      {user?.is_admin && ( 
-        <div className="mb-4 text-right">
-          <button onClick={handleExcelDownload} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-            Download Data (Excel)
-          </button>
-        </div>
-      )}
+      {/* Removed old admin-only Excel download button location */}
 
-      {loading ? <p className="text-center">Memuat dokumen...</p> : (
-        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      {loading ? <p className="text-center text-text-secondary py-10">Memuat dokumen...</p> : (
+        <div /* ref={tableContainerRef} // Logging removed */ className="bg-content-bg shadow-xl rounded-xl overflow-x-auto w-full"> {/* Added w-full */}
+          <table className="min-w-full divide-y divide-border-color">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No Surat</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perihal</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pengirim</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tgl Upload</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Uploader</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokumen Respon</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">No Surat</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Tipe</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Jenis</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Perihal</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Pengirim</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Uploader</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Disposisi / Tindak Lanjut</th>
+                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-content-bg divide-y divide-border-color">
               {documents.length > 0 ? documents.map(doc => (
-                <tr key={doc.document_id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{doc.nomor_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.tipe_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.jenis_surat}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={doc.perihal}>{doc.perihal}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{doc.pengirim || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.upload_timestamp}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{doc.uploader_nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {/* Show "Tambah Respon" if it's Surat Masuk and no response document */}
-                    {doc.tipe_surat === 'Surat Masuk' && !doc.response_storage_path ? (
-                       <button onClick={() => handleAddResponse(doc)} className="text-blue-600 hover:text-blue-900">Tambah Respon</button>
+                <tr key={doc.document_id} className="hover:bg-page-bg transition-colors duration-150">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-primary text-center">{doc.nomor_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.tipe_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.jenis_surat}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary max-w-xs truncate text-center" title={doc.perihal}>{doc.perihal}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.pengirim || 'N/A'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary text-center">{doc.uploader_nama}</td>
+                  <td className="px-4 py-3 text-sm text-center"> {/* Removed whitespace-nowrap */}
+                    { doc.tipe_surat === 'Surat Masuk' ? (
+                      <button onClick={() => openDispositionModal(doc)} className="p-1 hover:bg-gray-200 rounded-full">
+                        {(doc.isi_disposisi || doc.disposition_attachment_path || doc.response_keterangan || doc.response_storage_path) ? (
+                          <img src={process.env.PUBLIC_URL + '/menu-dots-archive.svg'} alt="Edit Disposisi/Tindak Lanjut" className="w-5 h-5 text-text-secondary" />
+                        ) : (
+                          <img src={process.env.PUBLIC_URL + '/addArchive.png'} alt="Tambah Disposisi/Tindak Lanjut" className="w-5 h-5 text-green-500" />
+                        )}
+                      </button>
                     ) : (
-                      // If there is a response document, show preview and delete options
-                      doc.response_storage_path ? (
-                        <span className="space-x-2"> {/* Use a span to group buttons */}
-                          <button onClick={() => handlePreviewResponse(doc)} className="text-indigo-600 hover:text-indigo-900">Preview Respon</button>
-                          {user?.is_admin && ( // Conditionally render delete response button for admins
-                            <button
-                              onClick={() => handleDeleteResponse(doc)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete Respon
-                            </button>
-                          )}
-                        </span>
-                      ) : (
-                        // If no response document but has_responded is true (due to keterangan), indicate response added
-                         doc.has_responded && doc.response_keterangan && <span>Respon Ditambahkan</span> // Only show if keterangan exists
-                      )
+                      <span className="text-text-light">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button onClick={() => handlePreview(doc)} className="text-indigo-600 hover:text-indigo-900">Preview</button>
-                    <button onClick={() => handleDownload(doc)} className="text-green-600 hover:text-green-900">Download</button>
-                    {user?.is_admin && ( // Conditionally render delete document button for admins
-                      <button
-                        onClick={() => handleDelete(doc.document_id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
+                  <td className="px-4 py-3 text-sm font-medium text-center"> {/* Removed whitespace-nowrap */}
+                    <div className="flex flex-wrap justify-center items-center space-x-1"> {/* Added flex-wrap and space-x-1 for better spacing */}
+                      <button onClick={() => handlePreview(doc)} className="p-1 hover:bg-gray-200 rounded-full" title="Preview"> {/* Removed mx-1 */}
+                         <img src={process.env.PUBLIC_URL + '/viewArchive.png'} alt="Preview" className="w-5 h-5" />
                       </button>
-                    )}
+                      {user?.is_admin && (
+                        <button
+                          onClick={() => handleDelete(doc.document_id)}
+                          className="p-1 hover:bg-gray-200 rounded-full" /* Removed mx-1 */
+                          title="Delete"
+                        >
+                          <img src={process.env.PUBLIC_URL + '/binArchive.png'} alt="Delete" className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={user?.is_admin ? 10 : 9} className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada dokumen ditemukan.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-sm text-text-secondary">Tidak ada dokumen ditemukan.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
       {totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-6 flex justify-center">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
                   <button
                       key={pageNumber}
                       onClick={() => handlePageChange(pageNumber)}
-                      className={`mx-1 px-3 py-1 border rounded ${currentPage === pageNumber ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'}`}
+                      className={`mx-1 px-4 py-2 border rounded-lg text-sm font-medium ${currentPage === pageNumber ? 'bg-primary text-white border-primary' : 'bg-content-bg text-primary border-border-color hover:bg-page-bg'}`}
                   >
                       {pageNumber}
                   </button>
               ))}
           </div>
       )}
-      {/* .input-field styles are now global in index.css */}
-
-      {/* Add the modal component */}
-      {showAddResponseModal && (
-        <AddResponseModal
-          document={selectedDocument}
-          onClose={handleCloseAddResponseModal}
-          onResponseAdded={handleResponseAdded}
+      
+      {showDispositionModal && selectedDocumentForDisposition && (
+        <DispositionFollowUpModal
+          document={selectedDocumentForDisposition}
+          onClose={closeDispositionModal}
+          onActionComplete={handleDispositionActionComplete}
         />
       )}
     </>
