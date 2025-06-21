@@ -45,8 +45,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        REACT_APP_API_BASE_URL: https://sisteminformasiadministrasipengarsipan-siap.com/api # Use HTTPS and your domain
+      # Removed args for REACT_APP_API_BASE_URL to use default for local development
     container_name: siap_frontend_compose
     restart: unless-stopped
     depends_on:

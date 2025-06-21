@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS documents (
     perihal TEXT NOT NULL,
     pengirim VARCHAR(255), -- NULLABLE, only for 'Surat Masuk'
     isi_disposisi TEXT, -- NULLABLE, only for 'Surat Masuk'
+    tanggal_masuk_surat DATE, -- New: Date of document entry
     storage_path VARCHAR(255) NOT NULL, -- Path to the file on the server's filesystem
     original_filename VARCHAR(255) NOT NULL,
     upload_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

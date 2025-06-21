@@ -26,21 +26,25 @@ exports.register = async (req, res) => {
   // }
 
   try {
+    console.log('Attempting to find user by email:', email);
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
+      console.log('Email already registered:', email);
       return res.status(400).json({ message: 'Email sudah terdaftar.' });
     }
 
+    console.log('Attempting to create new user...');
     const newUser = await User.create({ email, password, nama, pangkat, nrp });
+    console.log('New user created:', newUser); // Log the created user object
     // Exclude password_hash from the response
-    const { password_hash, ...userWithoutPassword } = newUser; 
+    const { password_hash, ...userWithoutPassword } = newUser;
 
     res.status(201).json({
       message: 'Pendaftaran berhasil! Akun Anda menunggu persetujuan admin.',
       user: userWithoutPassword,
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error in authController:', error); // More specific error message
     res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
 };

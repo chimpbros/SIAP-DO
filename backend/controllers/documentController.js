@@ -16,10 +16,10 @@ const truncateFilename = (filename, maxLength = 200) => {
 };
 
 // Helper to create month_year string
-const getCurrentMonthYear = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+const getCurrentMonthYear = (date) => {
+  const d = date ? new Date(date) : new Date();
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
   return `${year}-${month}`;
 };
 
@@ -35,6 +35,7 @@ exports.addDocument = async (req, res) => {
     pengirim,
     // isi_disposisi, response_keterangan, archive_without_response are removed
     // as they are handled by the modal flow now.
+    tanggal_masuk_surat, // New: Date of document entry
   } = req.body;
 
   const uploader_user_id = req.user.userId; // From authMiddleware
@@ -58,13 +59,35 @@ exports.addDocument = async (req, res) => {
   // Removed validation for isi_disposisi and response related fields
   // --- End Validation ---
 
+  // Determine month_year based on tanggal_masuk_surat or current date
+  let docDate = new Date(); // Default to current date
+  if (tanggal_masuk_surat) {
+    try {
+      docDate = new Date(tanggal_masuk_surat);
+      // Basic validation: check if the date is valid
+      if (isNaN(docDate.getTime())) {
+         // If invalid date string, fall back to current date
+         console.warn(`[DEBUG] addDocument - Invalid tanggal_masuk_surat provided: ${tanggal_masuk_surat}. Using current date.`);
+         docDate = new Date();
+      }
+    } catch (e) {
+       // Handle potential parsing errors, fall back to current date
+       console.error(`[DEBUG] addDocument - Error parsing tanggal_masuk_surat: ${tanggal_masuk_surat}`, e);
+       docDate = new Date();
+    }
+  }
+
+  const year = docDate.getFullYear();
+  const month = (docDate.getMonth() + 1).toString().padStart(2, '0');
+  const calculated_month_year = `${year}-${month}`;
+
+
   console.log(`[DEBUG] addDocument - Original Document Path (Multer): ${originalDocument.path}`);
   console.log(`[DEBUG] addDocument - Original Document Exists: ${fs.existsSync(originalDocument.path)}`);
 
   // Store paths relative to the expected mount point inside the Docker container
   const original_storage_path = `/uploads/${path.basename(originalDocument.path)}`;
   const original_filename = originalDocument.originalname;
-  const month_year = getCurrentMonthYear();
 
   // --- Default values for disposition/response fields for new documents ---
   // These will be updated later via the modal flow.
@@ -87,10 +110,11 @@ exports.addDocument = async (req, res) => {
       perihal,
       pengirim, // Pengirim is now always present
       isi_disposisi, // Will be null initially for Surat Masuk, or always null for Surat Keluar
+      tanggal_masuk_surat: tanggal_masuk_surat ? new Date(tanggal_masuk_surat) : new Date(), // Use provided date or current date
       storage_path: original_storage_path,
       original_filename,
       uploader_user_id,
-      month_year,
+      month_year: calculated_month_year, // Use the derived month_year
       response_storage_path,
       response_original_filename,
       response_upload_timestamp,
@@ -128,7 +152,8 @@ exports.listDocuments = async (req, res) => {
       limit: parseInt(limit, 10),
       offset,
     });
-
+    // The Document.findAll method now uses tanggal_masuk_surat for filtering if provided.
+    // No change needed here, just ensure the model method is updated.
     res.status(200).json({
       documents,
       currentPage: parseInt(page, 10),
@@ -317,7 +342,7 @@ exports.exportDocumentsToExcel = async (req, res) => {
       { header: 'Perihal', key: 'perihal', width: 50 },
       { header: 'Pengirim', key: 'pengirim', width: 30 },
       { header: 'Isi Disposisi', key: 'isi_disposisi', width: 50 },
-      { header: 'Tanggal Upload', key: 'tanggal_upload', width: 20 },
+      { header: 'Tanggal Masuk Surat', key: 'tanggal_masuk_surat', width: 20 },
       { header: 'Uploader Nama', key: 'uploader_nama', width: 25 },
       { header: 'Uploader NRP', key: 'uploader_nrp', width: 15 },
       { header: 'Nama File Asli', key: 'original_filename', width: 30 },
@@ -344,7 +369,7 @@ exports.exportDocumentsToExcel = async (req, res) => {
   } catch (error) {
     console.error('Error exporting documents to Excel:', error);
     if (!res.headersSent) {
-      res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengekspor dokumen.' });
+      res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
     }
   }
 };

@@ -10,6 +10,7 @@ const AddDocumentPage = () => {
     nomor_surat: '',
     perihal: '',
     pengirim: '',
+    tanggal_masuk_surat: '', // New: Date of document entry
     // Removed: isi_disposisi, response_document, response_keterangan
   });
   const [file, setFile] = useState(null);
@@ -76,6 +77,9 @@ const AddDocumentPage = () => {
     data.append('nomor_surat', formData.nomor_surat);
     data.append('perihal', formData.perihal);
     data.append('pengirim', formData.pengirim); // Pengirim is now always sent
+    if (formData.tanggal_masuk_surat) {
+      data.append('tanggal_masuk_surat', formData.tanggal_masuk_surat);
+    }
 
     // Backend will need to be adjusted to not expect isi_disposisi, responseDocument, etc.,
     // or handle their absence gracefully for this simplified form.
@@ -92,6 +96,7 @@ const AddDocumentPage = () => {
         nomor_surat: '',
         perihal: '',
         pengirim: '',
+        tanggal_masuk_surat: '', // Reset date field
       });
       setFile(null);
       // Clear the file input visually
@@ -133,6 +138,11 @@ const AddDocumentPage = () => {
                 <option value="Nota Dinas">Nota Dinas</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1" htmlFor="tanggal_masuk_surat">Tanggal Masuk Surat</label>
+            <input type="date" id="tanggal_masuk_surat" value={formData.tanggal_masuk_surat} onChange={handleChange} className="input-field bg-gray-100 border-gray-100 focus:bg-white focus:border-primary" />
           </div>
 
           <div>

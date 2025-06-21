@@ -10,6 +10,7 @@ const Document = {
     isi_disposisi,
     storage_path, // Original document path
     original_filename, // Original document filename
+    tanggal_masuk_surat, // New: Date of document entry
     uploader_user_id,
     month_year,
     response_storage_path, // New: Response document path
@@ -23,11 +24,11 @@ const Document = {
     const query = `
       INSERT INTO documents (
         tipe_surat, jenis_surat, nomor_surat, perihal, pengirim, isi_disposisi,
-        storage_path, original_filename, uploader_user_id, month_year,
+        tanggal_masuk_surat, storage_path, original_filename, uploader_user_id, month_year,
         response_storage_path, response_original_filename, response_upload_timestamp, response_keterangan, has_responded,
         disposition_attachment_path, disposition_original_filename
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *;
     `;
     const values = [
@@ -37,6 +38,7 @@ const Document = {
       perihal,
       pengirim,
       isi_disposisi,
+      tanggal_masuk_surat, // Add new field
       storage_path,
       original_filename,
       uploader_user_id,
@@ -61,7 +63,7 @@ const Document = {
 
   async findById(documentId) {
     const query = `
-      SELECT d.*, u.nama as uploader_nama, u.nrp as uploader_nrp
+      SELECT d.*, TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat_formatted, u.nama as uploader_nama, u.nrp as uploader_nrp
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
       WHERE d.document_id = $1;
@@ -79,6 +81,7 @@ const Document = {
     let mainQuerySelect = `
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim, d.isi_disposisi,
                TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+               TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat_formatted, -- Add formatted date
                u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
                d.response_document_id, d.response_storage_path, d.response_original_filename, d.response_upload_timestamp, d.response_keterangan, d.has_responded,
                d.disposition_attachment_path, d.disposition_original_filename
@@ -150,6 +153,7 @@ const Document = {
     let baseQuery = `
       SELECT d.nomor_surat, d.tipe_surat, d.jenis_surat, d.perihal, d.pengirim, d.isi_disposisi,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as tanggal_upload,
+             TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat, -- Add date of entry
              u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename,
              d.disposition_attachment_path, d.disposition_original_filename
       FROM documents d
@@ -198,6 +202,7 @@ const Document = {
     let baseQuery = `
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+             TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat_formatted, -- Add formatted date
              u.nama as uploader_nama, u.nrp as uploader_nrp, d.original_filename, d.storage_path,
              d.disposition_attachment_path, d.disposition_original_filename
       FROM documents d
@@ -310,7 +315,7 @@ const Document = {
 
   async findByResponseFilePathPartial(partialPath) {
     const query = `
-      SELECT d.*, u.nama as uploader_nama, u.nrp as uploader_nrp
+      SELECT d.*, TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat_formatted, u.nama as uploader_nama, u.nrp as uploader_nrp
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id
       WHERE d.response_storage_path LIKE $1;
@@ -330,6 +335,7 @@ const Document = {
     let queryText = `
       SELECT d.document_id, d.tipe_surat, d.jenis_surat, d.nomor_surat, d.perihal, d.pengirim,
              TO_CHAR(d.upload_timestamp, 'YYYY-MM-DD HH24:MI:SS') as upload_timestamp,
+             TO_CHAR(d.tanggal_masuk_surat, 'YYYY-MM-DD') as tanggal_masuk_surat_formatted, -- Add formatted date
              u.nama as uploader_nama
       FROM documents d
       JOIN users u ON d.uploader_user_id = u.user_id

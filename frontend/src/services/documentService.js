@@ -86,7 +86,7 @@ const DocumentService = {
       // Handle error, perhaps by trying to parse error response if it's JSON
       // For blob responses, error might not be easily parsable as JSON if server sends error with wrong content-type
       console.error('Excel download error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Gagal mengunduh file Excel.';
+      const errorMessage = error.response?.data || { message: error.message || 'Gagal mengunduh file Excel.' };
       // If error.response.data is a Blob, it needs to be read as text
       if (error.response && error.response.data instanceof Blob && error.response.data.type.includes('application/json')) {
         try {
