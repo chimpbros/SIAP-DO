@@ -37,9 +37,15 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 512 // 512KB file size limit
+    fileSize: 1024 * 1024 * 2 // 2MB file size limit
   },
   fileFilter: fileFilter
 });
 
-module.exports = upload;
+// Export a function that can handle multiple specific file fields
+const uploadFields = upload.fields([
+  { name: 'originalDocument', maxCount: 1 },
+  { name: 'responseDocument', maxCount: 1 }
+]);
+
+module.exports = { uploadFields };

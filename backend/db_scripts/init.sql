@@ -31,6 +31,30 @@ CREATE TABLE IF NOT EXISTS documents (
     month_year VARCHAR(7) NOT NULL -- e.g., '2025-05' for easier filtering/grouping
 );
 
+-- Add columns for response document if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='response_document_id') THEN
+        ALTER TABLE documents ADD COLUMN response_document_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='response_storage_path') THEN
+        ALTER TABLE documents ADD COLUMN response_storage_path VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='response_original_filename') THEN
+        ALTER TABLE documents ADD COLUMN response_original_filename VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='response_upload_timestamp') THEN
+        ALTER TABLE documents ADD COLUMN response_upload_timestamp TIMESTAMP WITH TIME ZONE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='response_keterangan') THEN
+        ALTER TABLE documents ADD COLUMN response_keterangan TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='has_responded') THEN
+        ALTER TABLE documents ADD COLUMN has_responded BOOLEAN DEFAULT FALSE;
+    END IF;
+END $$;
+
+
 -- Create indexes for frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_documents_nomor_surat ON documents(nomor_surat);
