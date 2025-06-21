@@ -10,7 +10,7 @@ const ArchiveListPage = () => {
   const [documents, setDocuments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const [filterYear, setFilterYear] = useState(''); // Default to 'All Time'
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -224,7 +224,8 @@ const ArchiveListPage = () => {
     }
   };
 
-  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+  const currentYear = new Date().getFullYear();
+  const years = ['', ...Array.from({ length: 10 }, (_, i) => currentYear - i)]; // Use empty string for 'All Time'
   const months = [
     { value: '', label: 'Semua Bulan' }, { value: '01', label: 'Januari' }, { value: '02', label: 'Februari' },
     { value: '03', label: 'Maret' }, { value: '04', label: 'April' }, { value: '05', label: 'Mei' },
@@ -272,7 +273,11 @@ const ArchiveListPage = () => {
           <div>
             <label htmlFor="filterYear" className="block text-sm font-medium text-text-secondary mb-1">Tahun</label>
             <select id="filterYear" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="input-field w-full">
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
+              {years.map(y => (
+                <option key={y} value={y}>
+                  {y === '' ? 'Semua Waktu' : y}
+                </option>
+              ))}
             </select>
           </div>
           {/* Search Button - Takes full width on xs, auto on md+ */}
