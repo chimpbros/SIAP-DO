@@ -50,6 +50,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      REACT_APP_API_BASE_URL: https://sisteminformasiadministrasipengarsipan-siap.com/api
     ports:
       - "80:80" # Redirect HTTP to HTTPS
       - "443:443" # Expose frontend Nginx HTTPS port
