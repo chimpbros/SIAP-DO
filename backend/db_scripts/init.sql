@@ -24,13 +24,20 @@ CREATE TABLE IF NOT EXISTS documents (
     perihal TEXT NOT NULL,
     pengirim VARCHAR(255), -- NULLABLE, only for 'Surat Masuk'
     isi_disposisi TEXT, -- NULLABLE, only for 'Surat Masuk'
-    tanggal_masuk_surat DATE, -- New: Date of document entry
     storage_path VARCHAR(255) NOT NULL, -- Path to the file on the server's filesystem
     original_filename VARCHAR(255) NOT NULL,
     upload_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     uploader_user_id UUID NOT NULL REFERENCES users(user_id),
     month_year VARCHAR(7) NOT NULL -- e.g., '2025-05' for easier filtering/grouping
 );
+
+-- Add column for tanggal_masuk_surat if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documents' AND column_name='tanggal_masuk_surat') THEN
+        ALTER TABLE documents ADD COLUMN tanggal_masuk_surat DATE;
+    END IF;
+END $$;
 
 -- Add columns for response document if they don't exist
 DO $$
