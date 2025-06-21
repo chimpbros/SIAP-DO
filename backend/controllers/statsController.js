@@ -98,6 +98,41 @@ exports.getMonthlyUploadStats = async (req, res) => {
   }
 };
 
+// R3.x: Display Graphic of Documents Entered on a Yearly Basis (e.g., last 5 years)
+exports.getYearlyUploadStats = async (req, res) => {
+  const userIsAdmin = req.user.isAdmin;
+
+  let queryText = `
+    WITH last_5_years AS (
+      SELECT GENERATE_SERIES(EXTRACT(YEAR FROM CURRENT_DATE) - 4, EXTRACT(YEAR FROM CURRENT_DATE)) AS year
+    )
+    SELECT
+      y.year,
+      COALESCE(COUNT(d.document_id), 0) AS count
+    FROM last_5_years y
+    LEFT JOIN documents d ON EXTRACT(YEAR FROM d.tanggal_masuk_surat) = y.year
+  `;
+
+  if (!userIsAdmin) {
+    queryText += `
+      AND d.jenis_surat != 'STR'
+    `;
+  }
+
+  queryText += `
+    GROUP BY y.year
+    ORDER BY y.year ASC;
+  `;
+
+  try {
+    const { rows } = await db.query(queryText);
+    res.status(200).json({ stats: rows });
+  } catch (error) {
+    console.error('Error getting yearly upload stats:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+};
+
 exports.getDashboardSummary = async (req, res) => {
   const userIsAdmin = req.user.isAdmin;
   const currentMonthYear = getCurrentMonthYearString();

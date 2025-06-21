@@ -33,6 +33,7 @@ const DashboardPage = () => {
   const [suratMasukCount, setSuratMasukCount] = useState(0);
   const [suratKeluarCount, setSuratKeluarCount] = useState(0);
   const [monthlyStats, setMonthlyStats] = useState([]); // For chart
+  const [yearlyStats, setYearlyStats] = useState([]); // New state for yearly stats
   const [userName, setUserName] = useState('');
   const [loadingStats, setLoadingStats] = useState(true);
   const [recentDocuments, setRecentDocuments] = useState([]);
@@ -62,6 +63,14 @@ const DashboardPage = () => {
             count: parseInt(s.count, 10)
         }));
         setMonthlyStats(formattedMonthlyStats);
+
+        // Fetch yearly stats
+        const yearlyData = await StatsService.getYearlyUploadStats();
+        const formattedYearlyStats = yearlyData.stats.map(s => ({
+            ...s,
+            count: parseInt(s.count, 10)
+        }));
+        setYearlyStats(formattedYearlyStats);
 
         const recentDocsData = await DocumentService.getRecentDocuments({ limit: 10 });
         setRecentDocuments(recentDocsData.documents || []);
@@ -107,9 +116,145 @@ const DashboardPage = () => {
         <StatCard title="Bulan Ini" value={docCountThisMonth} iconSrc="/messageYellow.png" wrapperClass="hidden md:block" />
       </div>
 
-      {/* Recent Documents Table and Chart in a two-column layout for larger screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-content-bg p-6 rounded-xl shadow-lg">
+      {/* Charts in a two-column layout for larger screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"> {/* Changed to lg:grid-cols-2 */}
+        {/* Section for Yearly Upload Statistics Chart */}
+        <div className="bg-content-bg p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold text-text-primary mb-4">Statistik Surat Tahunan</h2>
+          <div className="h-72">
+            {yearlyStats.length > 0 ? (
+              <Line
+                data={{
+                  labels: yearlyStats.map(s => s.year),
+                  datasets: [
+                    {
+                      label: 'Jumlah Dokumen Diupload Tahunan',
+                      data: yearlyStats.map(s => s.count),
+                      fill: false, // As per image, yearly chart is not filled
+                      borderColor: 'rgba(239, 68, 68, 1)', // Red color from image
+                      tension: 0.3, // Smooths the line
+                      pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                      pointBorderColor: '#fff',
+                      pointHoverBackgroundColor: '#fff',
+                      pointHoverBorderColor: 'rgba(239, 68, 68, 1)',
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                      labels: {
+                        color: '#4B5563' // theme('colors.text-secondary')
+                      }
+                    },
+                    title: {
+                      display: true,
+                      text: 'Upload Dokumen (Beberapa Tahun Terakhir)',
+                      color: '#1F2937' // theme('colors.text-primary')
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 5, // Adjust step size as needed for yearly data
+                        color: '#4B5563'
+                      },
+                      grid: {
+                        color: '#E5E7EB'
+                      }
+                    },
+                    x: {
+                       ticks: {
+                        color: '#4B5563'
+                      },
+                      grid: {
+                        display: false
+                      }
+                    }
+                  }
+                }}
+              />
+            ) : (
+              <p className="text-text-secondary text-center pt-10">Data statistik tahunan tidak tersedia...</p>
+            )}
+          </div>
+        </div>
+
+        {/* Section for Monthly Upload Statistics Chart (existing) */}
+        <div className="bg-content-bg p-6 rounded-xl shadow-lg"> {/* Removed lg:col-span-1 */}
+          <h2 className="text-xl font-semibold text-text-primary mb-4">Statistik Surat Bulanan</h2>
+          <div className="h-72">
+            {monthlyStats.length > 0 ? (
+              <Line
+                data={{
+                  labels: monthlyStats.map(s => s.month_year),
+                  datasets: [
+                    {
+                      label: 'Jumlah Dokumen Diupload',
+                      data: monthlyStats.map(s => s.count),
+                      fill: true,
+                      borderColor: 'rgba(59, 130, 246, 1)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                      tension: 0.3,
+                      pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                      pointBorderColor: '#fff',
+                      pointHoverBackgroundColor: '#fff',
+                      pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                      labels: {
+                        color: '#4B5563'
+                      }
+                    },
+                    title: {
+                      display: true,
+                      text: 'Upload Dokumen (12 Bulan Terakhir)',
+                      color: '#1F2937'
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1,
+                        color: '#4B5563'
+                      },
+                      grid: {
+                        color: '#E5E7EB'
+                      }
+                    },
+                    x: {
+                       ticks: {
+                        color: '#4B5563'
+                      },
+                      grid: {
+                        display: false
+                      }
+                    }
+                  }
+                }}
+              />
+            ) : (
+              <p className="text-text-secondary text-center pt-10">Data statistik bulanan tidak tersedia...</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Documents Table (existing) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"> {/* This section needs to be moved below the charts */}
+        <div className="lg:col-span-3 bg-content-bg p-6 rounded-xl shadow-lg"> {/* Adjusted col-span */}
           <h2 className="text-xl font-semibold text-text-primary mb-4">Dokumen Terbaru</h2>
           {loadingRecentDocs ? (
             <p className="text-text-secondary">Memuat dokumen terbaru...</p>
@@ -140,73 +285,6 @@ const DashboardPage = () => {
           ) : (
             <p className="text-text-secondary">Tidak ada dokumen terbaru.</p>
           )}
-        </div>
-
-        {/* Section for Monthly Upload Statistics Chart */}
-        <div className="lg:col-span-1 bg-content-bg p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold text-text-primary mb-4">Statistik Surat Bulanan</h2>
-          <div className="h-72"> {/* Adjusted height for better proportion */}
-            {monthlyStats.length > 0 ? (
-              <Line // Changed from Bar to Line
-                data={{
-                  labels: monthlyStats.map(s => s.month_year),
-                  datasets: [
-                    {
-                      label: 'Jumlah Dokumen Diupload',
-                      data: monthlyStats.map(s => s.count),
-                      fill: true, // Fill area under the line
-                      borderColor: 'rgba(59, 130, 246, 1)', // theme('colors.primary')
-                      backgroundColor: 'rgba(59, 130, 246, 0.2)', // Lighter fill color
-                      tension: 0.3, // Smooths the line
-                      pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                      pointBorderColor: '#fff',
-                      pointHoverBackgroundColor: '#fff',
-                      pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        color: '#4B5563' // theme('colors.text-secondary')
-                      }
-                    },
-                    title: {
-                      display: true,
-                      text: 'Upload Dokumen (12 Bulan Terakhir)',
-                      color: '#1F2937' // theme('colors.text-primary')
-                    },
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        stepSize: 1,
-                        color: '#4B5563' // theme('colors.text-secondary')
-                      },
-                      grid: {
-                        color: '#E5E7EB' // theme('colors.border-color')
-                      }
-                    },
-                    x: {
-                       ticks: {
-                        color: '#4B5563' // theme('colors.text-secondary')
-                      },
-                      grid: {
-                        display: false // Hiding x-axis grid lines for cleaner look
-                      }
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <p className="text-text-secondary text-center pt-10">Data statistik bulanan tidak tersedia...</p>
-            )}
-          </div>
         </div>
       </div>
     </>

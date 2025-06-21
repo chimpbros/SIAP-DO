@@ -16,4 +16,7 @@ router.get('/docs/monthly-uploads', statsController.getMonthlyUploadStats);
 // GET /api/stats/summary - Dashboard summary statistics
 router.get('/summary', statsController.getDashboardSummary);
 
+// GET /api/stats/docs/yearly-uploads - Yearly upload statistics for chart
+router.get('/docs/yearly-uploads', statsController.getYearlyUploadStats);
+
 module.exports = router;

@@ -361,7 +361,10 @@ const Document = {
     }
     
     try {
+      console.log('[DEBUG] findRecent - Query:', queryText);
+      console.log('[DEBUG] findRecent - Params:', queryParams);
       const { rows } = await db.query(queryText, queryParams);
+      console.log('[DEBUG] findRecent - Rows returned:', rows.length);
       return rows;
     } catch (error) {
       console.error('Error finding recent documents:', error);

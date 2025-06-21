@@ -32,6 +32,15 @@ const StatsService = {
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch dashboard summary stats.' };
     }
+  },
+
+  getYearlyUploadStats: async () => {
+    try {
+      const response = await api.get('/stats/docs/yearly-uploads');
+      return response.data; // Expected: { stats: [{ year: number, count: string/number }] }
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch yearly upload stats.' };
+    }
   }
 };
 
