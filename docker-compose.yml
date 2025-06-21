@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: thegrandinquisitor# # Replace with a strong password
       POSTGRES_DB: siapdb
     volumes:
-      - postgres_data_compose:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
       - ./backend/db_scripts/init.sql:/docker-entrypoint-initdb.d/init.sql # Mount init.sql
     # Remove port mapping if not needed for direct external access after setup
     # ports:
@@ -61,7 +61,7 @@ services:
       - siap_network_compose
 
 volumes:
-  postgres_data_compose: # Use a different volume name to avoid conflict with Coolify's
+  db-data:
 
 networks:
   siap_network_compose: # Use a different network name
